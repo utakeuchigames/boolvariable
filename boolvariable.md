@@ -1,11 +1,11 @@
 # boolvariable
 ## 注意！  
-・使用するとき、サンドボックスをonにした状態で、インストールをすると、ブロックパレットが壊れるという状態を確認しましたので、まず、javascriptファイル本体をダウンロードして(このマークです<img src="./../../images/utakeuchigames/IMG_0028.jpeg" width="18" style="vertical-align: middle;">)、拡張機能→turbowarp→カスタム拡張機能→ファイルからサンドボックスをoffにした状態でインストールしてください。  
+・使用するとき、サンドボックスをonにした状態で、インストールをすると、ブロックパレットが壊れるという状態を確認しましたので、まず、javascriptファイル本体をダウンロードして(このマークです<img src="./IMG_0028.jpeg" width="18" style="vertical-align: middle;">)、拡張機能→turbowarp→カスタム拡張機能→ファイルからサンドボックスをoffにした状態でインストールしてください。  
   
 ## 使い方
 インストールした後、ブロックパレットに以下のブロックたちが追加されます。
 
-<img src="./../../images/utakeuchigames/IMG_0060.jpeg" width="300" alt="ブロックメニューの様子">
+<img src="./IMG_0060.jpeg" width="300" alt="ブロックメニューの様子">
 
 「真偽値変数」が本アドオンの本体で、機能は以下の通りです。
 
