@@ -9,22 +9,6 @@
             this.boolVariablesinfo = {};
             this.isUIOpen = false;
             this.isDelUIOpen = false; 
-
-            // 🛑【自動清掃】ストップボタンが押された時にクローン用の一時変数を一斉清掃！
-            if (Scratch.vm && Scratch.vm.runtime) {
-                Scratch.vm.runtime.on('PROJECT_STOP_ALL', () => {
-                    console.log("🛑 プロジェクト停止を検知！クローン用の一時変数をクリーンアップします。");
-                    
-                    for (const key of Object.keys(this.boolVariables)) {
-                        if (key.includes('_clone_')) {
-                            delete this.boolVariables[key];
-                            delete this.boolVariablesinfo[key];
-                        }
-                    }
-                    
-                    this.refreshBlocks();
-                });
-            }
         }
 
         // セーブデータの書き出し
@@ -44,97 +28,67 @@
                 if (parsed) {
                     this.boolVariables = parsed.boolVariables ?? {};
                     this.boolVariablesinfo = parsed.boolVariablesinfo ?? {};
+
+                    // 読み込み時にもし管理情報（info）が欠落している変数があれば自動救出
+                    for (const key of Object.keys(this.boolVariables)) {
+                        if (!this.boolVariablesinfo[key]) {
+                            this.ensureVariableExists(key);
+                        }
+                    }
                 }
+                
                 this.refreshBlocks();
             } catch (e) {
                 console.error("❌ データの復元に失敗したよ：", e);
             }
         }
 
+        // ⚡️ ブロックの表示を最新状態に更新するヘルパー
         refreshBlocks() {
             setTimeout(() => {
                 if (Scratch.vm && Scratch.vm.runtime) {
                     Scratch.vm.runtime.requestBlocksDisplayUpdate();
                 }
-            }, 50);
+            }, 5);
         }
 
-        /**
-         * 🏆 【スコープ厳密判定：修正版】
-         * グローバル変数はクローンであっても絶対に隔離キー（_clone_）を作らず、共通のキーを返す。
-         * ローカル変数（このスプライトのみ）の時だけ、クローン用に隔離する。
-         */
-        getUniqueKey(varName, util) {
-            if (!util || !util.target) {
-                return varName;
+        // ⚡️【核心】内部キーの形からグローバル/ローカルを賢く見極めて、その場で復元を試みる関数
+        ensureVariableExists(internalKey) {
+            // すでに存在していれば何もしない
+            if (Object.prototype.hasOwnProperty.call(this.boolVariables, internalKey)) {
+                return;
             }
 
-            // すでに完成した内部キー（stage_あ や スプライト1_あ）の時はそのまま返す
-            if (this.boolVariablesinfo[varName]) {
-                return varName;
+            console.log(`💡 未知のデータ「${internalKey}」を検知！自動復元を試みます。`);
+
+            let displayName = internalKey;
+            let isLocal = false;
+            let targetId = 'stage';
+
+            // 文字列の中に "_" が含まれているかチェック
+            if (internalKey.includes('_')) {
+                isLocal = true; // "_" があるならローカル変数として復元を試みる
+
+                // スプライトID自体の "_" 混入を考慮して、一番最後の "_" の位置で綺麗に分割
+                const lastIndex = internalKey.lastIndexOf('_');
+                targetId = internalKey.substring(0, lastIndex); // 前半：元の所有スプライトID
+                displayName = internalKey.substring(lastIndex + 1); // 後半：表示名
+            } else {
+                // "_" がない場合は、全体が内部キーであり表示名（グローバル変数）
+                displayName = internalKey;
+                isLocal = false;
+                targetId = 'stage';
             }
 
-            const spriteName = util.target.getName ? util.target.getName() : 'stage';
-            const isClone = util.target.isOriginal === false;
+            // データ全体（internalKey）をそのままキーにして実体を生成！
+            this.boolVariables[internalKey] = false;
+            this.boolVariablesinfo[internalKey] = {
+                isLocal: isLocal,
+                targetId: targetId,
+                displayName: displayName
+            };
 
-            // 1. まず「このスプライトのみ（ローカル）」の定義があるか探す
-            const localKey = `${spriteName}_${varName}`;
-            if (Object.prototype.hasOwnProperty.call(this.boolVariablesinfo, localKey)) {
-                // ローカル変数の場合：クローンなら隔離キー、本体ならローカルキーを返す
-                return isClone ? `${localKey}_clone_${util.target.id}` : localKey;
-            }
-
-            // 2. なければ「すべてのスプライト用（グローバル）」
-            // 💡【ここを大修正！】グローバル変数の場合は、クローンであっても一律で同じ共有キーを返す！
-            return `stage_${varName}`;
-        }
-
-        /**
-         * 🛡️ 【自動実体化 ＆ クローンローカル値引き継ぎ防壁】
-         * 完全にUIで定義済みの変数をベースにして、不足している実体（ローカルのクローン用）を作る。
-         */
-        ensureVariableExists(varName, util) {
-            if (varName === 'IGNORE_CLICK' || varName === 'OPEN_DELETE_UI' || varName === '(空)' || !varName) return varName;
-
-            const internalKey = this.getUniqueKey(varName, util);
-
-            // メモリ上にまだこの実体が存在しない（ローカル変数のクローンが初めてアクセスした時など）場合
-            if (!Object.prototype.hasOwnProperty.call(this.boolVariables, internalKey)) {
-                
-                // 元となった親（本体）のキーを特定する
-                let parentKey = internalKey;
-                if (internalKey.includes('_clone_')) {
-                    parentKey = internalKey.split('_clone_')[0];
-                }
-
-                // もし親の定義すら存在しない未作成の変数の場合は、安全のためグローバルとして1つだけ作る
-                if (!Object.prototype.hasOwnProperty.call(this.boolVariables, parentKey)) {
-                    const globalKey = `stage_${varName}`;
-                    if (!Object.prototype.hasOwnProperty.call(this.boolVariables, globalKey)) {
-                        this.boolVariables[globalKey] = false;
-                        this.boolVariablesinfo[globalKey] = { name: varName, scope: 'stage' };
-                    }
-                    return globalKey;
-                }
-
-                // 親の値を完全に引き継ぐ
-                const defaultValue = !!this.boolVariables[parentKey];
-
-                // クローン用の実体をメモリに登録
-                this.boolVariables[internalKey] = defaultValue;
-                
-                // info側にもクローン情報を登録
-                const parentInfo = this.boolVariablesinfo[parentKey];
-                const displayName = parentInfo ? (parentInfo.name ?? varName) : varName;
-                const parentScope = parentInfo ? parentInfo.scope : 'stage';
-                
-                this.boolVariablesinfo[internalKey] = {
-                    name: displayName,
-                    scope: parentScope === 'stage' ? 'グローバル (クローン)' : `${parentScope} (クローン)`
-                };
-            }
-
-            return internalKey;
+            this.refreshBlocks();
         }
 
         getInfo() {
@@ -146,8 +100,15 @@
                 color2: "#ff8000",          
                 color3: "#db6d00",      
                 blocks: [
-                    { blockType: Scratch.BlockType.LABEL, text: '真偽値変数' },
-                    { func: 'createUI', blockType: Scratch.BlockType.BUTTON, text: '変数作成フォームを開く' },
+                    {
+                        blockType: Scratch.BlockType.LABEL,
+                        text: '真偽値変数'
+                    },
+                    {
+                        func: 'createUI',
+                        blockType: Scratch.BlockType.BUTTON,
+                        text: '変数作成フォームを開く'
+                    },
                     {
                         opcode: 'setBool',
                         blockType: Scratch.BlockType.COMMAND,
@@ -169,21 +130,34 @@
                         opcode: 'ifBool',
                         blockType: Scratch.BlockType.EVENT,
                         text: 'bool値[variable]が[bool]になった時',
-                        isEdgeActivated: false,
+                        isEdgeActivated: false, // startHats連動のイベント型
                         arguments: {
                             variable: { type: Scratch.ArgumentType.STRING, menu: 'boolVariableHatMenu' },
                             bool: { type: Scratch.ArgumentType.STRING, menu: 'staticBoolMenu' }
                         }
                     },
-                    { opcode: 'getallBool', blockType: Scratch.BlockType.REPORTER, text: '全部のbool値を見る' },
-                    { opcode: 'getallboolinfo', blockType: Scratch.BlockType.REPORTER, text: '全部のbool値の情報を見る' },
+                    {
+                        opcode: 'getallBool',
+                        blockType: Scratch.BlockType.REPORTER,
+                        text: '全部のbool値を見る',
+                    },
+                    {
+                        opcode: 'getallboolinfo',
+                        blockType: Scratch.BlockType.REPORTER,
+                        text: '全部のbool値の情報を見る',
+                    },
                     '---',
-                    { blockType: Scratch.BlockType.LABEL, text: 'その他のキット' },
+                    {
+                        blockType: Scratch.BlockType.LABEL,
+                        text: 'その他のキット'
+                    },
                     {
                         opcode: 'reversebool',
                         blockType: Scratch.BlockType.BOOLEAN,
                         text: '![bool]',
-                        arguments: { bool: { type: Scratch.ArgumentType.BOOLEAN } }
+                        arguments: {
+                            bool: { type: Scratch.ArgumentType.BOOLEAN }
+                        }
                     },
                     {
                         opcode: 'andbool',
@@ -232,7 +206,6 @@
             const editingTarget = Scratch.vm.runtime.getEditingTarget();
             const isStage = editingTarget ? !!editingTarget.isStage : false;
             const currentTargetId = editingTarget ? (editingTarget.id ?? 'stage') : 'stage';
-            const spriteName = editingTarget ? (editingTarget.getName ? editingTarget.getName() : currentTargetId) : 'stage';
 
             const overlay = document.createElement('div');
             overlay.style.cssText = `position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background-color:var(--ui-modal-overlay,rgba(0,0,0,0.55));color:var(--ui-modal-foreground,#333333);display:flex;justify-content:center;align-items:center;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;`;
@@ -285,7 +258,10 @@
                 this.isUIOpen = false;
             };
 
-            overlay.onclick = (e) => { if (e.target === overlay) close(); };
+            overlay.onclick = (e) => {
+                if (e.target === overlay) close();
+            };
+
             document.getElementById('ceoCloseXBtn').onclick = close;
             document.getElementById('cancelBtn').onclick = close;
 
@@ -296,21 +272,20 @@
                     const scopeValue = (document.querySelector('input[name="variableScopeOption"]:checked') ?? { value: 'global' }).value;
                     
                     const isLocal = isStage ? false : (scopeValue === 'local');
-                    const prefix = isLocal ? spriteName : 'stage';
+                    const targetId = isLocal ? currentTargetId : 'stage';
                     
                     let isDuplicate = false;
 
                     for (const existingKey of Object.keys(this.boolVariables)) {
-                        if (existingKey.includes('_clone_')) continue;
                         const info = this.boolVariablesinfo[existingKey];
-                        const existingDisplayName = info ? (info.name ?? existingKey) : existingKey;
+                        const existingDisplayName = info ? (info.displayName ?? existingKey) : existingKey;
 
                         if (existingDisplayName === trimmedName) {
                             if (!isLocal) {
                                 isDuplicate = true;
                                 break;
                             } else {
-                                if (!info || info.scope === 'stage' || info.scope === spriteName) {
+                                if (!info || !info.isLocal || info.targetId === targetId) {
                                     isDuplicate = true;
                                     break;
                                 }
@@ -323,12 +298,13 @@
                         return;
                     }
 
-                    const internalKey = `${prefix}_${trimmedName}`;
+                    const internalKey = isLocal ? `${targetId}_${trimmedName}` : trimmedName;
                     
                     this.boolVariables[internalKey] = false;
                     this.boolVariablesinfo[internalKey] = {
-                        name: trimmedName,
-                        scope: prefix
+                        isLocal: isLocal,
+                        targetId: targetId,
+                        displayName: trimmedName
                     };
                     
                     this.refreshBlocks();
@@ -337,7 +313,9 @@
             };
 
             document.getElementById('varInput').onkeypress = (e) => {
-                if (e.key === 'Enter') document.getElementById('okBtn').click();
+                if (e.key === 'Enter') {
+                    document.getElementById('okBtn').click();
+                }
             };
         }
 
@@ -345,21 +323,23 @@
         getVariableMenuItems(currentlySelectedValue) {
             const menuItems = [];
             const currentTarget = Scratch.vm.runtime.getEditingTarget();
-            const spriteName = currentTarget ? (currentTarget.getName ? currentTarget.getName() : (currentTarget.id ?? 'stage')) : 'stage';
+            const currentTargetId = currentTarget ? (currentTarget.id ?? 'stage') : 'stage';
 
             for (const key of Object.keys(this.boolVariables)) {
-                if (key.includes('_clone_')) continue;
-
                 const info = this.boolVariablesinfo[key];
-                const dispName = info ? (info.name ?? key) : key;
-                const scope = info ? info.scope : 'stage';
+                const dispName = info ? (info.displayName ?? key) : key;
                 
-                if (scope === 'stage' || scope === spriteName) {
-                    menuItems.push({ text: dispName, value: dispName });
+                if (info) {
+                    // グローバル変数、または「いま編集中のスプライト」に属するローカル変数のみメニューに出す
+                    if (!info.isLocal || info.targetId === currentTargetId) {
+                        menuItems.push({ text: dispName, value: key });
+                    }
+                } else {
+                    menuItems.push({ text: dispName, value: key });
                 }
             }
 
-            const isValidUserVar = Object.prototype.hasOwnProperty.call(this.boolVariables, `${spriteName}_${currentlySelectedValue}`) || Object.prototype.hasOwnProperty.call(this.boolVariables, `stage_${currentlySelectedValue}`);
+            const isValidUserVar = Object.prototype.hasOwnProperty.call(this.boolVariables, currentlySelectedValue);
             
             if (!isValidUserVar || !currentlySelectedValue || currentlySelectedValue === '(空)') {
                 menuItems.unshift({ text: '(空)', value: '(空)' });
@@ -376,19 +356,20 @@
         }
 
         // 変数削除UIのレンダリング
+        // 変数削除UIのレンダリング
         createDeleteUI() {
             if (this.isDelUIOpen) return;
             this.isDelUIOpen = true;
 
             setTimeout(() => {
                 const currentTarget = Scratch.vm.runtime.getEditingTarget();
-                const spriteName = currentTarget ? (currentTarget.getName ? currentTarget.getName() : (currentTarget.id ?? 'stage')) : 'stage';
+                const currentTargetId = currentTarget ? (currentTarget.id ?? 'stage') : 'stage';
 
+                // 今開いているスプライトで削除できる変数（グローバル or 自分のローカル）を絞り込む
                 const deleteableKeys = Object.keys(this.boolVariables).filter(internalKey => {
-                    if (internalKey.includes('_clone_')) return false;
                     const info = this.boolVariablesinfo[internalKey];
                     if (!info) return true;
-                    return info.scope === 'stage' || info.scope === spriteName;
+                    return !info.isLocal || info.targetId === currentTargetId;
                 });
 
                 if (deleteableKeys.length === 0) {
@@ -403,14 +384,16 @@
                 const dialog = document.createElement('div');
                 dialog.style.cssText = `background-color:#ffffff;width:340px;border:4px solid #ff4c4c;border-radius:0.5rem;overflow:hidden;display:flex;flex-direction:column;box-shadow:0px 4px 15px rgba(0,0,0,0.3);`;
 
+                // 選択肢のHTMLをループで組み立てる
                 let optionsHtml = '';
                 for (const key of deleteableKeys) {
                     const info = this.boolVariablesinfo[key];
-                    const disp = info ? (info.name ?? key) : key;
-                    const typeText = info ? (info.scope === 'stage' ? '[グローバル]' : '[ローカル]') : '[不明]';
+                    const disp = info ? (info.displayName ?? key) : key;
+                    const typeText = info ? (info.isLocal ? '[ローカル]' : '[グローバル]') : '[不明]';
                     optionsHtml += `<option value="${key}">${typeText} ${disp}</option>`;
                 }
 
+                // ⚡️【修正箇所】 ${optionsHtml} の前の「\\」を消去したよ！
                 dialog.innerHTML = `
                     <div style="height:3rem;background-color:#ff4c4c;color:#ffffff;display:flex;justify-content:center;align-items:center;font-weight:bold;font-size:1rem;">
                         変数の削除
@@ -441,19 +424,11 @@
                 document.getElementById('executeDelBtn').onclick = () => {
                     const targetKey = document.getElementById('deleteSelect').value;
                     const info = this.boolVariablesinfo[targetKey];
-                    const dispName = info ? (info.name ?? targetKey) : targetKey;
+                    const dispName = info ? (info.displayName ?? targetKey) : targetKey;
 
-                    if (confirm(`本当に bool値「${dispName}」を完全に削除しますか？\n(連動するクローン用の一時変数もすべて消去されます)`)) {
+                    if (confirm(`本当に bool値「${dispName}」を完全に削除しますか？\n(この変数を使用している他のブロックは初期状態に戻ります)`)) {
                         delete this.boolVariables[targetKey];
                         delete this.boolVariablesinfo[targetKey];
-
-                        const basePrefix = targetKey.split('_')[0];
-                        for (const key of Object.keys(this.boolVariables)) {
-                            if (key.startsWith(`${basePrefix}_${dispName}_clone_`)) {
-                                delete this.boolVariables[key];
-                                delete this.boolVariablesinfo[key];
-                            }
-                        }
 
                         closeDel();
                         
@@ -470,30 +445,31 @@
             }, 100); 
         }
 
-        // 値設定ブロック
-        setBool(args, util) {
+        // ⚡️ セットブロック
+        setBool(args, util) { 
             if (args.variable === 'OPEN_DELETE_UI') {
                 this.createDeleteUI();
                 return;
             }
             if (args.variable === 'IGNORE_CLICK' || args.variable === '(空)') return;
 
-            const actualKey = this.ensureVariableExists(args.variable, util);
+            // 🔥 処理が走る手前で、未知のキーであれば安全に復元する
+            this.ensureVariableExists(args.variable);
 
-            const prevalue = !!this.boolVariables[actualKey];
-            this.boolVariables[actualKey] = (args.bool === 'true');
-
-            if (prevalue !== (args.bool === 'true')) {
-                const data = {
-                    variable: args.variable, 
-                    bool: args.bool,
-                    actualKey: actualKey     
-                };
+            const prevalue = this.boolVariables[args.variable];
+            this.boolVariables[args.variable] = (args.bool === 'true');
+            const data = {
+                "variable": args.variable.toString(),
+                bool: String(args.bool)
+            };
+            
+            if (prevalue != (args.bool === 'true')) {
+                // 変数が確実に作られてから startHats を呼ぶので、イベント処理もバグらない
                 Scratch.vm.runtime.startHats("BV_ifBool", data, false);
             }
         }
 
-        // 値取得ブロック
+        // ⚡️ 値取得ブロック
         getBool(args, util) {
             if (args.variable === 'OPEN_DELETE_UI') {
                 this.createDeleteUI();
@@ -501,20 +477,18 @@
             }
             if (args.variable === 'IGNORE_CLICK' || args.variable === '(空)') return false;
 
-            const actualKey = this.ensureVariableExists(args.variable, util);
-            return !!this.boolVariables[actualKey]; 
+            // 🔥 値を読み込む手前でも、未知のキーであれば安全に復元する
+            this.ensureVariableExists(args.variable);
+
+            return !!this.boolVariables[args.variable]; 
         }
 
-        // ハットブロック（イベント条件判定）
+        // ⚡️ ハットブロック（isEdgeActivated: falseのため、startHatsのフィルタ判定として一瞬だけ動く）
         ifBool(args, util) {
             if (args.variable === 'IGNORE_CLICK' || args.variable === '(空)') return false;
             
-            const myActualKey = this.getUniqueKey(args.variable, util);
-            const targetData = util.currentBackgroundData;
-
-            if (!targetData) return false;
-
-            return myActualKey === targetData.actualKey && args.bool === targetData.bool;
+            // setBool側ですでに実体が保証されているため、ここでは純粋な一致判定だけを行う
+            return args.variable === util.currentBackgroundData.variable && args.bool === util.currentBackgroundData.bool;
         }
 
         getallBool(args) { return JSON.stringify(this.boolVariables); }
