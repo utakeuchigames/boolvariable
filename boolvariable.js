@@ -8,19 +8,7 @@
     let deltaTime = 0;
     let previousTime = 0;
 
-    vm.runtime.on("BEFORE_EXECUTE", () => {
-        const now = performance.now();
-
-        if (previousTime === 0) {
-            // First frame. We used to always return 0 here, but that can break projects that
-            // expect delta time to always be non-zero. Instead we'll make our best guess.
-            deltaTime = 1 / vm.runtime.frameLoop.framerate;
-        } else {
-            deltaTime = (now - previousTime) / 1000;
-        }
-
-        previousTime = now;
-    });
+    
 
     class Boolvariable {
         constructor() {
@@ -28,6 +16,7 @@
             this.boolVariablesinfo = {};
             this.isUIOpen = false;
             this.isDelUIOpen = false; 
+            this.frameCount = 0;
         }
 
         // セーブデータの書き出し
@@ -541,6 +530,23 @@
         }
     }
 
-    Scratch.extensions.register(new Boolvariable());
+　　 const Boolvariableextension = new Boolvariable();
+    
+    vm.runtime.on("BEFORE_EXECUTE", () => {
+        Boolvariableextension.frameCount++;
+        const now = performance.now();
+
+        if (previousTime === 0) {
+            // First frame. We used to always return 0 here, but that can break projects that
+            // expect delta time to always be non-zero. Instead we'll make our best guess.
+            deltaTime = 1 / vm.runtime.frameLoop.framerate;
+        } else {
+            deltaTime = (now - previousTime) / 1000;
+        }
+
+        previousTime = now;
+    });
+
+    Scratch.extensions.register(Boolvariableextension);
 
 })(Scratch);
