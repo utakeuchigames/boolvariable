@@ -185,6 +185,14 @@
                             bool1: { type: Scratch.ArgumentType.BOOLEAN },
                             bool2: { type: Scratch.ArgumentType.BOOLEAN }
                         }
+                    },
+                    {
+                        opcode: 'waitFrames',
+                        blockType: Scratch.BlockType.COMMAND,
+                        text: '[frames] フレーム待つ',
+                        arguments: {
+                            frames: { type: Scratch.ArgumentType.NUMBER, defaultValue: 1 }
+                        }
                     }
                 ],
                 menus: {
@@ -498,6 +506,13 @@
         andbool(args,util){ return !!(args.bool1 && args.bool2); }
         orbool(args,util){ return !!(args.bool1 || args.bool2); }
         xorbool(args,util){ return (args.bool1 !== args.bool2); }
+        async waitFrames(args, util) {
+            const frames = Math.round(args.frames);
+            for (let i = 0; i < frames; i++) {
+                // yield() は「次のフレームまで待機する」という命令
+                await util.yield();
+            }
+        }
     }
 
     Scratch.extensions.register(new Boolvariable());
