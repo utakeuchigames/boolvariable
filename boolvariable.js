@@ -3,6 +3,25 @@
 
     const icon = 'https://utakeuchigames.github.io/boolvariable/favicon.svg';
 
+    const vm = Scratch.vm;
+
+    let deltaTime = 0;
+    let previousTime = 0;
+
+    vm.runtime.on("BEFORE_EXECUTE", () => {
+        const now = performance.now();
+
+        if (previousTime === 0) {
+            // First frame. We used to always return 0 here, but that can break projects that
+            // expect delta time to always be non-zero. Instead we'll make our best guess.
+            deltaTime = 1 / vm.runtime.frameLoop.framerate;
+        } else {
+            deltaTime = (now - previousTime) / 1000;
+        }
+
+        previousTime = now;
+    });
+
     class Boolvariable {
         constructor() {
             this.boolVariables = {};
@@ -507,11 +526,7 @@
         orbool(args,util){ return !!(args.bool1 || args.bool2); }
         xorbool(args,util){ return (args.bool1 !== args.bool2); }
         async waitFrames(args, util) {
-            const frames = Math.round(args.frames);
-            for (let i = 0; i < frames; i++) {
-                // yield() は「次のフレームまで待機する」という命令
-                await util.yield();
-            }
+            await settimeout(, args.frames * deltaTime);
         }
     }
 
