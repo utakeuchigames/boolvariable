@@ -526,7 +526,12 @@
         orbool(args,util){ return !!(args.bool1 || args.bool2); }
         xorbool(args,util){ return (args.bool1 !== args.bool2); }
         async waitFrames(args, util) {
-            await settimeout(, args.frames * deltaTime);
+            // frames分 * deltaTime(秒) で待機時間(ミリ秒)を算出
+            // ※deltaTimeはBEFORE_EXECUTEで秒単位で計算されている前提
+            const waitMs = (args.frames * deltaTime) * 1000;
+            
+            // PromiseでsetTimeoutをラップしてawaitできるようにする
+            await new Promise(resolve => setTimeout(resolve, waitMs));
         }
     }
 
