@@ -525,7 +525,7 @@
             // イメージ：内部カウンターを使う方法
             const targetFrame = this.frameCount + args.frames - 1;
             while (this.frameCount < targetFrame) {
-                await new Promise(resolve => requestAnimationFrame(resolve));
+                await new Promise(resolve => setTimeout(resolve, 0));
             }
         }
     }
