@@ -1,15 +1,12 @@
 ((Scratch) => {
     'use strict';
-
     const icon = 'https://utakeuchigames.github.io/boolvariable/favicon.svg';
-
     const vm = Scratch.vm;
     const {
        BlockType,
        ArgumentType,
        Cast
     } = Scratch;
-    
     function xmlEscape(str) {
        return str.replace(/&/g, "&amp;")
           .replace(/</g, "&lt;")
@@ -17,17 +14,14 @@
           .replace(/"/g, "&quot;")
           .replace(/'/g, "&#39;");
     }
- 
     function validColour(colour) {
        if (typeof colour != "string") return false;
        const hexRegex = /^#[0-9A-F]{6}$/i;
        return hexRegex.test(colour);
     }
- 
     const toastConfig = {
         soundWhenEnabled: "true"
     };
-    
     const defaultStyles = {
        toast: {
           '--toast-bg': '#1a1a1a',
@@ -66,10 +60,7 @@
           }
        }
     };
- 
     let styleConfig = JSON.parse(JSON.stringify(defaultStyles));
- 
-    // Enhanced container management for stacking
     const createToastContainer = (position) => {
        let container = document.getElementById('ToastContainer');
        if (!container) {
@@ -81,27 +72,21 @@
        container.className = `toast-container ${position}`;
        return container;
     };
- 
-    // Style injection
     const injectStyles = () => {
-       const styleId = 'ToastStyles';
-       if (document.getElementById(styleId)) return;
- 
-       const style = document.createElement('style');
-       style.id = styleId;
-       style.textContent = `:root { --toast-slide-duration: 0.3s;} .toast-container { position: fixed; z-index: 9999; padding: 20px;} .toast-container.top-left { top: 0; left: 0; } .toast-container.top-right { top: 0; right: 0; } .toast-container.top-center { top: 0; left: 50%; transform: translateX(-50%); } .toast-container.bottom-left { bottom: 0; left: 0; } .toast-container.bottom-right { bottom: 0; right: 0; } .toast-container.bottom-center { bottom: 0; left: 50%; transform: translateX(-50%); } .toast-container.center-left { top: 50%; left: 0; transform: translateY(-50%); } .toast-container.center-right { top: 50%; right: 0; transform: translateY(-50%); } .toast-container.center-center { top: 50%; left: 50%; transform: translate(-50%, -50%);} .toast { display: flex; align-items: center; margin-bottom: var(--toast-margin); background-color: var(--toast-type-bg); color: var(--toast-type-color); font-size: var(--toast-font-size); border-radius: var(--toast-border-radius); padding: var(--toast-padding); min-width: var(--toast-min-width); max-width: var(--toast-max-width); box-shadow: var(--toast-shadow); opacity: 0; transform: translateY(100%); animation: toastSlideIn var(--toast-slide-duration) cubic-bezier(0.0, 0.0, 0.2, 1) forwards; } .toast img { width: 40px; height: 40px; margin-right: 15px; object-fit: cover; border-radius: calc(var(--toast-border-radius) / 2);} .toast-content { flex-grow: 1;} .toast-title { font-weight: bold; margin-bottom: 4px;} .toast-description { font-size: 0.9em; opacity: 0.8;} @keyframes toastSlideIn { from { opacity: 0; transform: translateY(100%);} to { opacity: 1; transform: translateY(0);}} @keyframes toastSlideOut { from { opacity: 1; transform: translateY(0);} to { opacity: 0; transform: translateY(100%);}}`;
-       document.head.appendChild(style);};
-
-    let deltaTime = 0;
-    let previousTime = 0;
-    let myScratchBlocks;
-
-    if (Scratch.gui) {
-        Scratch.gui.getBlockly().then(ScratchBlocks => {
-           myScratchBlocks = ScratchBlocks; 
-        });
-    }
-
+        const styleId = 'ToastStyles';
+        if (document.getElementById(styleId)) return;
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `:root { --toast-slide-duration: 0.3s;} .toast-container { position: fixed; z-index: 9999; padding: 20px;} .toast-container.top-left { top: 0; left: 0; } .toast-container.top-right { top: 0; right: 0; } .toast-container.top-center { top: 0; left: 50%; transform: translateX(-50%); } .toast-container.bottom-left { bottom: 0; left: 0; } .toast-container.bottom-right { bottom: 0; right: 0; } .toast-container.bottom-center { bottom: 0; left: 50%; transform: translateX(-50%); } .toast-container.center-left { top: 50%; left: 0; transform: translateY(-50%); } .toast-container.center-right { top: 50%; right: 0; transform: translateY(-50%); } .toast-container.center-center { top: 50%; left: 50%; transform: translate(-50%, -50%);} .toast { display: flex; align-items: center; margin-bottom: var(--toast-margin); background-color: var(--toast-type-bg); color: var(--toast-type-color); font-size: var(--toast-font-size); border-radius: var(--toast-border-radius); padding: var(--toast-padding); min-width: var(--toast-min-width); max-width: var(--toast-max-width); box-shadow: var(--toast-shadow); opacity: 0; transform: translateY(100%); animation: toastSlideIn var(--toast-slide-duration) cubic-bezier(0.0, 0.0, 0.2, 1) forwards; } .toast img { width: 40px; height: 40px; margin-right: 15px; object-fit: cover; border-radius: calc(var(--toast-border-radius) / 2);} .toast-content { flex-grow: 1;} .toast-title { font-weight: bold; margin-bottom: 4px;} .toast-description { font-size: 0.9em; opacity: 0.8;} @keyframes toastSlideIn { from { opacity: 0; transform: translateY(100%);} to { opacity: 1; transform: translateY(0);}} @keyframes toastSlideOut { from { opacity: 1; transform: translateY(0);} to { opacity: 0; transform: translateY(100%);}}`;
+        document.head.appendChild(style);};
+        let deltaTime = 0;
+        let previousTime = 0;
+        let myScratchBlocks;
+        if (Scratch.gui) {
+            Scratch.gui.getBlockly().then(ScratchBlocks => {
+                myScratchBlocks = ScratchBlocks; 
+            });
+        }
     class Boolvariable {
         static customId = 'boolvariable';
         constructor() {
