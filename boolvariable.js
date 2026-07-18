@@ -4,19 +4,117 @@
     const icon = 'https://utakeuchigames.github.io/boolvariable/favicon.svg';
 
     const vm = Scratch.vm;
+    const {
+       BlockType,
+       ArgumentType,
+       Cast
+    } = Scratch;
+ 
+    // vulnerability go BRRRRRRRRRRRRR
+    function xmlEscape(str) {
+       return str.replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+    }
+ 
+    function validColour(colour) {
+       if (typeof colour != "string") return false;
+       const hexRegex = /^#[0-9A-F]{6}$/i;
+       return hexRegex.test(colour);
+    }
+ 
+    const toastConfig = {
+        soundWhenEnabled: "true"
+    };
+
+    // Style system 
+    const defaultStyles = {
+       toast: {
+          '--toast-bg': '#1a1a1a',
+          '--toast-color': '#ffffff',
+          '--toast-font-size': '16px',
+          '--toast-border-radius': '16px',
+          '--toast-padding': '15px',
+          '--toast-duration': '3000',
+          '--toast-min-width': '300px',
+          '--toast-max-width': '400px',
+          '--toast-shadow': '0 8px 16px rgba(0,0,0,0.2)',
+          '--toast-z-index': 9999,
+          '--toast-margin': '10px',
+          'soundUrl': null
+       },
+       types: {
+          origin: {
+             '--toast-type-bg': '#1a1a1a',
+             '--toast-type-color': '#ffffff'
+          },
+          success: {
+             '--toast-type-bg': '#4CAF50',
+             '--toast-type-color': '#ffffff'
+          },
+          error: {
+             '--toast-type-bg': '#f44336',
+             '--toast-type-color': '#ffffff'
+          },
+          warning: {
+             '--toast-type-bg': '#ff9800',
+             '--toast-type-color': '#000000'
+          },
+          info: {
+             '--toast-type-bg': '#2196F3',
+             '--toast-type-color': '#ffffff'
+          }
+       }
+    };
+ 
+    let styleConfig = JSON.parse(JSON.stringify(defaultStyles));
+ 
+    // Enhanced container management for stacking
+    const createToastContainer = (position) => {
+       let container = document.getElementById('ToastContainer');
+       if (!container) {
+          container = document.createElement('div');
+          container.id = 'ToastContainer';
+          container.dataset.toasts = '0';
+          document.body.appendChild(container);
+       }
+       container.className = `toast-container ${position}`;
+       return container;
+    };
+ 
+    // Style injection
+    const injectStyles = () => {
+       const styleId = 'ToastStyles';
+       if (document.getElementById(styleId)) return;
+ 
+       const style = document.createElement('style');
+       style.id = styleId;
+       style.textContent = `:root { --toast-slide-duration: 0.3s;} .toast-container { position: fixed; z-index: 9999; padding: 20px;} .toast-container.top-left { top: 0; left: 0; } .toast-container.top-right { top: 0; right: 0; } .toast-container.top-center { top: 0; left: 50%; transform: translateX(-50%); } .toast-container.bottom-left { bottom: 0; left: 0; } .toast-container.bottom-right { bottom: 0; right: 0; } .toast-container.bottom-center { bottom: 0; left: 50%; transform: translateX(-50%); } .toast-container.center-left { top: 50%; left: 0; transform: translateY(-50%); } .toast-container.center-right { top: 50%; right: 0; transform: translateY(-50%); } .toast-container.center-center { top: 50%; left: 50%; transform: translate(-50%, -50%);} .toast { display: flex; align-items: center; margin-bottom: var(--toast-margin); background-color: var(--toast-type-bg); color: var(--toast-type-color); font-size: var(--toast-font-size); border-radius: var(--toast-border-radius); padding: var(--toast-padding); min-width: var(--toast-min-width); max-width: var(--toast-max-width); box-shadow: var(--toast-shadow); opacity: 0; transform: translateY(100%); animation: toastSlideIn var(--toast-slide-duration) cubic-bezier(0.0, 0.0, 0.2, 1) forwards; } .toast img { width: 40px; height: 40px; margin-right: 15px; object-fit: cover; border-radius: calc(var(--toast-border-radius) / 2);} .toast-content { flex-grow: 1;} .toast-title { font-weight: bold; margin-bottom: 4px;} .toast-description { font-size: 0.9em; opacity: 0.8;} @keyframes toastSlideIn { from { opacity: 0; transform: translateY(100%);} to { opacity: 1; transform: translateY(0);}} @keyframes toastSlideOut { from { opacity: 1; transform: translateY(0);} to { opacity: 0; transform: translateY(100%);}}`;
+       document.head.appendChild(style);};
 
     let deltaTime = 0;
     let previousTime = 0;
+    let myScratchBlocks;
 
-    
+    if (Scratch.gui) {
+        Scratch.gui.getBlockly().then(ScratchBlocks => {
+           myScratchBlocks = ScratchBlocks; 
+        });
+    }
 
     class Boolvariable {
+        static customId = 'boolvariable';
         constructor() {
             this.boolVariables = {};
             this.boolVariablesinfo = {};
             this.isUIOpen = false;
             this.isDelUIOpen = false; 
             this.frameCount = 0;
+            this.customId = Boolvariable.customId;
+            this.type = Boolvariable.customId;
+            injectStyles();
         }
 
         // セーブデータの書き出し
@@ -53,11 +151,108 @@
 
         // ⚡️ ブロックの表示を最新状態に更新するヘルパー
         refreshBlocks() {
+            // 少しだけ遅延させることで、VMの状態更新が終わった後にUIを叩く
             setTimeout(() => {
-                if (Scratch.vm && Scratch.vm.runtime) {
-                    Scratch.vm.runtime.requestBlocksDisplayUpdate();
+                // 1. 拡張機能マネージャーによる再読み込み (これが一番強い)
+                if (Scratch.vm.extensionManager && typeof Scratch.vm.extensionManager.refreshBlocks === 'function') {
+                    Scratch.vm.extensionManager.refreshBlocks();
+                }
+
+                // 2. ブロックパレットの再構築
+                if (Scratch.gui && typeof Scratch.gui.getWorkspace === 'function') {
+                    const workspace = Scratch.gui.getWorkspace();
+                    if (workspace) {
+                        workspace.refreshToolboxSelection();
+                    }
+                }
+
+                // 3. VMへの更新イベント発火 (念押し)
+                if (Scratch.vm && Scratch.vm.emit) {
+                    Scratch.vm.emit('WORKSPACE_UPDATE_DATA');
+                    Scratch.vm.emit('TOOLBOX_EXTENSIONS_NEED_UPDATE');
                 }
             }, 5);
+        }
+
+        async _createToast(options) {
+            const container = createToastContainer(options.position);
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+
+            const zIndex = styleConfig.toast['--toast-z-index'] || 9999;
+            toast.style.zIndex = zIndex;
+
+            // Get current stack position
+            const stackSize = parseInt(container.dataset.toasts || '0');
+            container.dataset.toasts = stackSize + 1;
+          
+            // Style handling
+            const typeStyle = styleConfig.types[options.type] || styleConfig.types.origin;
+            Object.entries(typeStyle).forEach(([prop, value]) => {
+                toast.style.setProperty(prop, value);
+            });
+ 
+            Object.entries(styleConfig.toast).forEach(([prop, value]) => {
+                if (prop !== 'soundUrl') {
+                    toast.style.setProperty(prop, value);
+                }
+            });
+ 
+            toast.style.transform = `translateY(${stackSize * 100}%)`;
+            toast.style.transition = 'transform 0.3s ease-out';
+ 
+            if (options.image && await fetch(options.image)) {
+                const img = document.createElement('img');
+                img.src = options.image;
+                img.alt = 'Toast icon';
+        
+                if (options.imageRounded) {
+                    img.style.borderRadius = '50%';
+                }
+        
+                toast.appendChild(img);
+            }
+ 
+            const content = document.createElement('div');
+            content.className = 'toast-content';
+ 
+            if (options.title) {
+               const title = document.createElement('div');
+               title.className = 'toast-title';
+               title.textContent = options.title;
+               content.appendChild(title);
+            }
+
+ 
+            const message = document.createElement('div');
+            message.className = options.title ? 'toast-description' : 'toast-content';
+            message.textContent = options.text;
+            content.appendChild(message);
+ 
+            toast.appendChild(content);
+            container.appendChild(toast);
+
+            if (toastConfig.soundWhenEnabled === "true" && styleConfig.toast.soundUrl) {
+               const audio = new Audio(styleConfig.toast.soundUrl);
+               audio.play().catch(() => {});
+            }
+ 
+            const duration = parseInt(styleConfig.toast['--toast-duration']) || defaultStyles.toast['--toast-duration'];
+            setTimeout(() => {
+                toast.style.animation = `toastSlideOut var(--toast-slide-duration) cubic-bezier(0.4, 0.0, 1, 1) forwards`;
+             
+                const toasts = container.querySelectorAll('.toast');
+                toasts.forEach((t, i) => {
+                    if (t !== toast) {
+                       t.style.transform = `translateY(${i * 100}%)`;
+                    }
+                });
+             
+                setTimeout(() => {
+                    toast.remove();
+                    container.dataset.toasts = Math.max(0, stackSize - 1);
+                }, 300);
+            }, duration);
         }
 
         // ⚡️【核心】内部キーの形からグローバル/ローカルを賢く見極めて、その場で復元を試みる関数
@@ -68,6 +263,13 @@
             }
 
             console.log(`💡 未知のデータ「${internalKey}」を検知！自動復元を試みます。`);
+            this._createToast({
+                type: Cast.toString('origin'),
+                image: xmlEscape(icon),
+                title: xmlEscape(Cast.toString('変数を復元しました')),
+                text: xmlEscape(Cast.toString(`変数: ${internalKey}を復元しました`)),
+                position: Cast.toString('bottom-right')
+            });
 
             let displayName = internalKey;
             let isLocal = false;
@@ -113,7 +315,7 @@
                         text: '真偽値変数'
                     },
                     {
-                        func: 'createUI',
+                        opcode: 'createUI',
                         blockType: Scratch.BlockType.BUTTON,
                         text: '変数作成フォームを開く'
                     },
@@ -214,8 +416,57 @@
             };
         }
 
-        // 変数作成UIのレンダリング
-        createUI() {
+        createUI(){
+            try {
+                const self = this;
+    
+                myScratchBlocks.prompt(
+                    "新しい変数名:", "", 
+                    (name, more_vars, {scope}) => {
+                        if (!name || name.trim() === "") {
+                            return;
+                        }
+            
+                        const trimmedName = name.trim();
+                        const editingTarget = Scratch.vm.runtime.getEditingTarget();  // ← ここで定義
+                        const currentTargetId = editingTarget ? (editingTarget.id ?? 'stage') : 'stage';
+                        const isLocal = scope === "local";
+                        const targetId = isLocal ? currentTargetId : 'stage';
+                        const internalKey = isLocal ? `${targetId}_${trimmedName}` : trimmedName;
+            
+                        // 重複チェック
+                        for (const key of Object.keys(self.boolVariablesinfo)) {
+                            const info = self.boolVariablesinfo[key];
+                            if (info.displayName === trimmedName) {
+                                if (!isLocal && !info.isLocal) {
+                                    alert(`「${trimmedName}」は既に存在します`);
+                                    return;
+                                }
+                                if (isLocal && info.isLocal && info.targetId === targetId) {
+                                    alert(`「${trimmedName}」は既に存在します`);
+                                    return;
+                                }
+                            }
+                        }
+            
+                        self.boolVariables[internalKey] = false;  // ← typo 修正
+                        self.boolVariablesinfo[internalKey] = {
+                            isLocal: isLocal,
+                            targetId: targetId,
+                            displayName: trimmedName
+                        };
+            
+                        return;
+                    },
+                    "新しい変数",
+                    Boolvariable.customId
+                );
+            }catch(err){
+                this.createUI_old();
+            }
+        }
+
+        createUI_old() {
             if (this.isUIOpen) return;
             this.isUIOpen = true;
 
@@ -335,45 +586,36 @@
             };
         }
 
-        // 変数メニュー（リスト）の生成
         getVariableMenuItems(currentlySelectedValue) {
             const menuItems = [];
             const currentTarget = Scratch.vm.runtime.getEditingTarget();
             const currentTargetId = currentTarget ? (currentTarget.id ?? 'stage') : 'stage';
 
-            for (const key of Object.keys(this.boolVariables)) {
+            // 1. 変数リストを作成
+            const variableKeys = Object.keys(this.boolVariables).filter(key => {
                 const info = this.boolVariablesinfo[key];
-                const dispName = info ? (info.displayName ?? key) : key;
-                
-                if (info) {
-                    // グローバル変数、または「いま編集中のスプライト」に属するローカル変数のみメニューに出す
-                    if (!info.isLocal || info.targetId === currentTargetId) {
-                        menuItems.push({ text: dispName, value: key });
-                    }
-                } else {
+                if (!info) return true;
+                return !info.isLocal || info.targetId === currentTargetId;
+            });
+
+            // 2. 変数がある場合はリストを追加
+            if (variableKeys.length > 0) {
+                for (const key of variableKeys) {
+                    const info = this.boolVariablesinfo[key];
+                    const dispName = info ? (info.displayName ?? key) : key;
                     menuItems.push({ text: dispName, value: key });
                 }
-            }
-
-            const isValidUserVar = Object.prototype.hasOwnProperty.call(this.boolVariables, currentlySelectedValue);
-            
-            if (!isValidUserVar || !currentlySelectedValue || currentlySelectedValue === '(空)') {
-                menuItems.unshift({ text: '(空)', value: '(空)' });
+                //menuItems.push({ text: '変数を削除するフォームを開く(サポート外)', value: 'OPEN_DELETE_UI_old' });
+                menuItems.push({ text: '変数を削除するフォームを開く', value: 'OPEN_DELETE_UI'});
             } else {
-                menuItems.push({ text: '(空)', value: '( Stock )' });
+                // 3. 変数が一つもない場合のみ (空) を表示
+                menuItems.push({ text: '(空)', value: '(空)' });
             }
-
-            if (menuItems.length > 0) {
-                menuItems.push({ text: '────────────────', value: 'IGNORE_CLICK' });
-            }
-            menuItems.push({ text: '🔥 変数を削除するフォームを開く', value: 'OPEN_DELETE_UI' });
 
             return menuItems;
         }
 
-        // 変数削除UIのレンダリング
-        // 変数削除UIのレンダリング
-        createDeleteUI() {
+        createDeleteUI_old() {
             if (this.isDelUIOpen) return;
             this.isDelUIOpen = true;
 
@@ -381,7 +623,6 @@
                 const currentTarget = Scratch.vm.runtime.getEditingTarget();
                 const currentTargetId = currentTarget ? (currentTarget.id ?? 'stage') : 'stage';
 
-                // 今開いているスプライトで削除できる変数（グローバル or 自分のローカル）を絞り込む
                 const deleteableKeys = Object.keys(this.boolVariables).filter(internalKey => {
                     const info = this.boolVariablesinfo[internalKey];
                     if (!info) return true;
@@ -400,7 +641,6 @@
                 const dialog = document.createElement('div');
                 dialog.style.cssText = `background-color:#ffffff;width:340px;border:4px solid #ff4c4c;border-radius:0.5rem;overflow:hidden;display:flex;flex-direction:column;box-shadow:0px 4px 15px rgba(0,0,0,0.3);`;
 
-                // 選択肢のHTMLをループで組み立てる
                 let optionsHtml = '';
                 for (const key of deleteableKeys) {
                     const info = this.boolVariablesinfo[key];
@@ -409,7 +649,6 @@
                     optionsHtml += `<option value="${key}">${typeText} ${disp}</option>`;
                 }
 
-                // ⚡️【修正箇所】 ${optionsHtml} の前の「\\」を消去したよ！
                 dialog.innerHTML = `
                     <div style="height:3rem;background-color:#ff4c4c;color:#ffffff;display:flex;justify-content:center;align-items:center;font-weight:bold;font-size:1rem;">
                         変数の削除
@@ -461,15 +700,90 @@
             }, 100); 
         }
 
-        // ⚡️ セットブロック
+        async createDeleteUI() {
+            // 1. 現在のターゲットを取得
+            const currentTarget = Scratch.vm.runtime.getEditingTarget();
+            const currentTargetId = currentTarget ? (currentTarget.id ?? 'stage') : 'stage';
+
+            // 2. 削除対象の絞り込み (そのスプライトで見える変数のみ)
+            const deleteableKeys = Object.keys(this.boolVariables).filter(internalKey => {
+                const info = this.boolVariablesinfo[internalKey];
+                if (!info) return true;
+                return !info.isLocal || info.targetId === currentTargetId;
+            });
+
+            if (deleteableKeys.length === 0) {
+                alert("❌ このスプライトで削除できる変数がありません！");
+                return;
+            }
+
+            // 3. 削除対象のselect要素を作成
+            const select = document.createElement("select");
+            select.style.width = "100%";
+            select.style.padding = "8px";
+            select.style.marginBottom = "20px";
+            
+            deleteableKeys.forEach(key => {
+                const info = this.boolVariablesinfo[key];
+                const dispName = info?.displayName || key;
+                const typeText = info ? (info.isLocal ? '[ローカル]' : '[グローバル]') : '[不明]';
+                
+                const option = document.createElement("option");
+                option.value = key;
+                option.textContent = `${typeText} ${dispName}`;
+                select.appendChild(option);
+            });
+
+            // 4. モダルを作成
+            const modal = await myScratchBlocks.customPrompt({
+                title: "変数の削除",
+                text: "削除する変数を選択してください:",
+                onCancel: () => {
+                    this.isDelUIOpen = false;
+                }
+            }, {
+                content: { width: "300px" }
+            }, [
+            { 
+                name: "削除", 
+                role: "ok", 
+                callback: () => {
+                    const selectedKey = select.value;
+                    if (!selectedKey) return;
+                    
+                    const dispname = select.options[select.selectedIndex].text;
+                    
+                    if (confirm(`本当に bool値「${dispname}」を完全に削除しますか？`)) {
+                        delete this.boolVariables[selectedKey];
+                        delete this.boolVariablesinfo[selectedKey];
+                        alert(`🎉 bool値「${dispname}」を完全に削除しました！`);
+                        this.refreshBlocks();
+                    }
+                    this.isDelUIOpen = false;
+                } 
+            },
+            { 
+                name: "キャンセル", 
+                role: "close",
+                callback: () => {
+                    this.isDelUIOpen = false;
+                }
+            }
+            ]);
+
+            modal.appendChild(select);
+        }
+
         setBool(args, util) { 
             if (args.variable === 'OPEN_DELETE_UI') {
                 this.createDeleteUI();
                 return;
+            }else if(args.variable === 'OPEN_DELETE_UI_old'){
+                this.createDeleteUI_old();
+                return;
             }
-            if (args.variable === 'IGNORE_CLICK' || args.variable === '(空)') return;
+            if (args.variable === '(空)') return;
 
-            // 🔥 処理が走る手前で、未知のキーであれば安全に復元する
             this.ensureVariableExists(args.variable);
 
             const prevalue = this.boolVariables[args.variable];
@@ -480,12 +794,10 @@
             };
             
             if (prevalue != (args.bool === 'true')) {
-                // 変数が確実に作られてから startHats を呼ぶので、イベント処理もバグらない
                 Scratch.vm.runtime.startHats("BV_ifBool", data, false);
             }
         }
 
-        // ⚡️ 値取得ブロック
         getBool(args, util) {
             if (args.variable === 'OPEN_DELETE_UI') {
                 this.createDeleteUI();
@@ -493,17 +805,14 @@
             }
             if (args.variable === 'IGNORE_CLICK' || args.variable === '(空)') return false;
 
-            // 🔥 値を読み込む手前でも、未知のキーであれば安全に復元する
             this.ensureVariableExists(args.variable);
 
             return !!this.boolVariables[args.variable]; 
         }
 
-        // ⚡️ ハットブロック（isEdgeActivated: falseのため、startHatsのフィルタ判定として一瞬だけ動く）
         ifBool(args, util) {
             if (args.variable === 'IGNORE_CLICK' || args.variable === '(空)') return false;
             
-            // setBool側ですでに実体が保証されているため、ここでは純粋な一致判定だけを行う
             return args.variable === util.currentBackgroundData.variable && args.bool === util.currentBackgroundData.bool;
         }
 
@@ -515,14 +824,10 @@
         orbool(args,util){ return !!(args.bool1 || args.bool2); }
         xorbool(args,util){ return (args.bool1 !== args.bool2); }
         async waitFrames(args, util) {
-            // frames分 * deltaTime(秒) で待機時間(ミリ秒)を算出
-            // ※deltaTimeはBEFORE_EXECUTEで秒単位で計算されている前提
             //const waitMs = (args.frames * deltaTime) * 1000;
             
-            // PromiseでsetTimeoutをラップしてawaitできるようにする
             //await new Promise(resolve => setTimeout(resolve, waitMs));
             
-            // イメージ：内部カウンターを使う方法
             const targetFrame = this.frameCount + args.frames - 1;
             while (this.frameCount < targetFrame) {
                 await new Promise(resolve => requestAnimationFrame(resolve));
@@ -530,15 +835,13 @@
         }
     }
 
-　　 const Boolvariableextension = new Boolvariable();
+    const Boolvariableextension = new Boolvariable();
     
     vm.runtime.on("BEFORE_EXECUTE", () => {
         Boolvariableextension.frameCount++;
         const now = performance.now();
 
         if (previousTime === 0) {
-            // First frame. We used to always return 0 here, but that can break projects that
-            // expect delta time to always be non-zero. Instead we'll make our best guess.
             deltaTime = 1 / vm.runtime.frameLoop.framerate;
         } else {
             deltaTime = (now - previousTime) / 1000;
