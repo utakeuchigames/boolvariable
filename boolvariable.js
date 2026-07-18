@@ -511,7 +511,7 @@
         getInfo() {
             return {
                 "id": "utgamesboolvaromake",
-                "name": "bool値変数拡張おまけ",
+                "name": "Bool値変数\n拡張おまけ",
                 "menuIconURI": icon,
                 "color1": "#ff8c1a",  
                 "color2": "#ff8000",          
