@@ -506,4 +506,37 @@
         previousTime = now;
     });
     Scratch.extensions.register(Boolvariableextension);
+    class utgamesboolvaromake {
+        getInfo() {
+            return {
+                "id": "utgamesboolvaromake",
+                "name": " bool値変数拡張おまけ",
+                "color1": "#0fbd8c",
+                "blocks": [{
+                    "opcode": "block_f479817eb168e994",
+                    "text": "fpsを [40a10f17b0716421] にする",
+                    "blockType": "command",
+                    "arguments": {
+                        "40a10f17b0716421": {
+                            "type": "number",
+                            "defaultValue": 30
+                        }
+                    }
+                }, {
+                    "opcode": "block_967e0e151ca23370",
+                    "text": "fps",
+                    "blockType": "reporter",
+                    "arguments": {}
+                }]
+            }
+        }
+        async block_f479817eb168e994(args) {
+            Scratch.vm.runtime.frameLoop.setFramerate(args["40a10f17b0716421"]);
+        }
+        async block_967e0e151ca23370(args) {
+            return (Scratch.vm.runtime.frameLoop.framerate)
+        }
+    }
+    let utgamesboolvaromake_object = new utgamesboolvaromake();
+    Scratch.extensions.register(utgamesboolvaromake_object);
 })(Scratch);
