@@ -135,7 +135,7 @@
             });
             toast.style.transform = `translateY(${stackSize * 100}%)`;
             toast.style.transition = 'transform 0.3s ease-out';
-            if (options.image && await fetch(options.image) {
+            if (options.image && await fetch(options.image)) {
                 const img = document.createElement('img');
                 img.src = options.image;
                 img.alt = 'Toast icon'
