@@ -511,7 +511,10 @@
             return {
                 "id": "utgamesboolvaromake",
                 "name": " bool値変数拡張おまけ",
-                "color1": "#0fbd8c",
+                "menuIconURI": icon,
+                "color1": "#ff8c1a",  
+                "color2": "#ff8000",          
+                "color3": "#db6d00",
                 "blocks": [{
                     "opcode": "block_f479817eb168e994",
                     "text": "fpsを [40a10f17b0716421] にする",
