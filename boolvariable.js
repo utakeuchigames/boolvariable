@@ -101,6 +101,7 @@
         myScratchBlocks = await Scratch.gui.getBlockly();
     }
     console.dir(myScratchBlocks);
+    console.log(myScratchBlocks.prompt.toString());
     class Boolvariable {
         static customId = 'boolvariable';
         constructor() {
