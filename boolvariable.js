@@ -83,11 +83,24 @@
     let deltaTime = 0;
     let previousTime = 0;
     let myScratchBlocks;
-    if (Scratch.gui) {
+    /* if (Scratch.gui) {
         await Scratch.gui.getBlockly().then(ScratchBlocks => {
             myScratchBlocks = ScratchBlocks; 
         });
+    } */
+    // 修正前：if (Scratch.gui) { await Scratch.gui.getBlockly().then(...) }
+
+    // 修正後：
+    // window直下の Blockly または ScratchBlocks を探す
+    if (typeof ScratchBlocks !== 'undefined') {
+        myScratchBlocks = ScratchBlocks;
+    } else if (typeof Blockly !== 'undefined') {
+        myScratchBlocks = Blockly;
+    } else if (Scratch.gui) {
+        // guiがある環境なら従来通り
+        myScratchBlocks = await Scratch.gui.getBlockly();
     }
+    console.dir(myScratchBlocks);
     class Boolvariable {
         static customId = 'boolvariable';
         constructor() {
