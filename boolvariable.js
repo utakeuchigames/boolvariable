@@ -1,7 +1,7 @@
 (async (Scratch) => {
     'use strict';
     if (!Scratch.extensions.unsandboxed) { throw new Error('This boolvarible must run without a sandbox.'); }
-    if(!Scratch.vm.runtime.isPenguinMod){ throw new Error('Boolvariable assumes that it will work in penguinmod. It does not work with other scratchmods.'); }
+    if(!Scratch.gui.getBlockly.prompt){ throw new Error('Boolvariable assumes that it will work in penguinmod. It does not work with other scratchmods.'); }
     const icon = 'https://utakeuchigames.github.io/boolvariable/favicon.svg';
     const vm = Scratch.vm;
     const { BlockType, ArgumentType, Cast } = Scratch;
