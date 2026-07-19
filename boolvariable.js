@@ -1,12 +1,10 @@
 (async (Scratch) => {
     'use strict';
+    if (!Scratch.extensions.unsandboxed) { throw new Error('This boolvarible must run without a sandbox.'); }
+    if(!Scratch.vm.runtime.isPenguinMod){ throw new Error('Boolvariable assumes that it will work in penguinmod. It does not work with other scratchmods.'); }
     const icon = 'https://utakeuchigames.github.io/boolvariable/favicon.svg';
     const vm = Scratch.vm;
-    const {
-       BlockType,
-       ArgumentType,
-       Cast
-    } = Scratch;
+    const { BlockType, ArgumentType, Cast } = Scratch;
     function xmlEscape(str) {
        return str.replace(/&/g, "&amp;")
           .replace(/</g, "&lt;")
@@ -19,9 +17,7 @@
        const hexRegex = /^#[0-9A-F]{6}$/i;
        return hexRegex.test(colour);
     }
-    const toastConfig = {
-        soundWhenEnabled: "true"
-    };
+    const toastConfig = { soundWhenEnabled: "true" };
     const defaultStyles = {
        toast: {
           '--toast-bg': '#1a1a1a',
@@ -83,25 +79,14 @@
     let deltaTime = 0;
     let previousTime = 0;
     let myScratchBlocks;
-    /* if (Scratch.gui) {
-        await Scratch.gui.getBlockly().then(ScratchBlocks => {
-            myScratchBlocks = ScratchBlocks; 
-        });
-    } */
-    // 修正前：if (Scratch.gui) { await Scratch.gui.getBlockly().then(...) }
-
-    // 修正後：
-    // window直下の Blockly または ScratchBlocks を探す
     if (typeof ScratchBlocks !== 'undefined') {
         myScratchBlocks = ScratchBlocks;
     } else if (typeof Blockly !== 'undefined') {
         myScratchBlocks = Blockly;
     } else if (Scratch.gui) {
-        // guiがある環境なら従来通り
         myScratchBlocks = await Scratch.gui.getBlockly();
     }
     console.dir(myScratchBlocks);
-    console.log(myScratchBlocks.prompt.toString());
     class Boolvariable {
         static customId = 'boolvariable';
         constructor() {
