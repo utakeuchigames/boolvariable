@@ -91,8 +91,8 @@
     class Boolvariable {
         static customId = 'boolvariable';
         constructor() {
-            this.boolVariables = {};
-            this.boolVariablesinfo = {};
+            this.boolVariables = {a: false};
+            this.boolVariablesinfo = {a: {isLocal: false, targetId: stage, displayName: a}};
             this.isUIOpen = false;
             this.isDelUIOpen = false; 
             this.frameCount = 0;
@@ -401,6 +401,7 @@
             } else {
                 menuItems.push({ text: '(空)', value: '(空)' });
             }
+            menuItems.push({ text: 'テストフォームを開く', value: 'OPEN_TEST_UI'});
             return menuItems;
         }
         async createDeleteUI() {
@@ -466,9 +467,47 @@
             ]);
             modal.appendChild(select);
         }
+        test(){
+        const modalCss = `<style>
+.custom-modal{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(0);width:90%;max-width:500px;height:400px;border-top-left-radius:20px;border-top-right-radius:20px;background:#fff;box-shadow:0 -4px 20px rgba(0,0,0,0.15);display:flex;flex-direction:column;z-index:9999;box-sizing:border-box;transition:transform 0.3s cubic-bezier(0.25,1,0.5,1);}
+.custom-modal.dragging{transition:none;}
+.modal-handle-bar{width:40px;height:5px;background:#d1d5db;border-radius:10px;margin:10px auto;cursor:grab;flex-shrink:0;touch-action:none;}
+.modal-content{flex:1;overflow-y:auto;padding:10px 20px 20px;box-sizing:border-box;}
+</style>`;
+$('head').append(modalCss);
+$('body').append(`<div class="custom-modal"><div class="modal-handle-bar"></div><div class="modal-content"><p>コンテンツ</p></div></div>`);
+const $m = $('.custom-modal'), h = $m.outerHeight();
+let sy = 0, cy = 0, flag = false;
+$m.on('touchstart mousedown', e => {
+    flag = true;
+    $m.addClass('dragging');
+    sy = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+    cy = 0;
+});
+$(window).on('touchmove mousemove', e => {
+    if (!flag) return;
+    cy = Math.max(0, (e.type === 'touchmove' ? e.touches[0].clientY : e.clientY) - sy);
+    $m.css('transform', `translateX(-50%) translateY(${cy}px)`);
+});
+$(window).on('touchend mouseup', () => {
+    if (!flag) return;
+    flag = false;
+    $m.removeClass('dragging');
+    if ((1 - cy / h) >= 0.7) {
+        $m.css('transform', 'translateX(-50%) translateY(0px)');
+    } else {
+        $m.css('transform', `translateX(-50%) translateY(${h}px)`);
+        setTimeout(() => $m.remove(), 300);
+    }
+});
+        }
         setBool(args, util) { 
             if (args.variable === 'OPEN_DELETE_UI') {
                 this.createDeleteUI();
+                return;
+            }
+            if (args.variable === 'OPEN_TEST_UI') {
+                this.test();
                 return;
             }
             if (args.variable === '(空)') return;
