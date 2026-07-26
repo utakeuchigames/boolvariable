@@ -92,7 +92,7 @@
         static customId = 'boolvariable';
         constructor() {
             this.boolVariables = {a: false};
-            this.boolVariablesinfo = {a: {isLocal: false, targetId: stage, displayName: a}};
+            this.boolVariablesinfo = {a: {isLocal: false, targetId: 'stage', displayName: 'a'}};
             this.isUIOpen = false;
             this.isDelUIOpen = false; 
             this.frameCount = 0;
