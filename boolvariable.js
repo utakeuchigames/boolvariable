@@ -99,8 +99,9 @@
             this.customId = Boolvariable.customId;
             this.type = Boolvariable.customId;
             injectStyles();
+            this.jQueryinstaller();
         }
-        async initAsync() {
+        async jQueryinstaller() {
             try {
                 const mod = await import('https://code.jquery.com/jquery-4.0.0.module.min.js');
                 const $ = mod.default;
