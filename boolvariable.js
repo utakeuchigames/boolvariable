@@ -100,6 +100,19 @@
             this.type = Boolvariable.customId;
             injectStyles();
         }
+        async initAsync() {
+            try {
+                const mod = await import('https://code.jquery.com/jquery-4.0.0.module.min.js');
+                const $ = mod.default;
+                window.$ = $;
+                this.isLoaded = true;
+                console.log(`jQuery v${$.fn.jquery} 読み込み完了！`);
+            } catch (e) {
+                this.isLoaded = false;
+                console.warn("jQueryのロードに失敗しました:", e);
+                console.warn("jQueryのロードに失敗したため、機能が一部利用不可能となります");
+            }
+        }
         refreshBlocks() {
             setTimeout(() => {
                 if (Scratch.vm.extensionManager && typeof Scratch.vm.extensionManager.refreshBlocks === 'function') {
