@@ -526,7 +526,7 @@ const BoolVariableAssets = {
         createUI() {
             try {
                 const self = this;
-                boolvariableassets.prompt(
+                BoolVariableAssets.prompt(
                     "新しい変数名:",
                     "",
                     (name, more_vars, { scope }) => {
