@@ -559,15 +559,22 @@
         }
         test() {
             const modalCss = `<style>
-.custom-modal{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(0);width:90%;max-width:500px;height:400px;border-top-left-radius:20px;border-top-right-radius:20px;background:#fff;box-shadow:0 -4px 20px rgba(0,0,0,0.15);display:flex;flex-direction:column;z-index:9999;box-sizing:border-box;transition:transform 0.3s cubic-bezier(0.25,1,0.5,1);touch-action:none;user-select:none;-webkit-user-select:none;}
-.custom-modal.dragging{transition:none;}
-.modal-handle-area{padding:12px 0;cursor:grab;touch-action:none;display:flex;justify-content:center;align-items:center;flex-shrink:0;}
-.modal-handle-bar{width:60px;height:6px;background:#d1d5db;border-radius:10px;pointer-events:none;}
-.modal-content{flex:1;overflow-y:auto;padding:10px 20px 20px;box-sizing:border-box;touch-action:pan-y;}
-</style>`;
+                .custom-modal{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(0);width:90%;max-width:500px;height:400px;border-top-left-radius:20px;border-top-right-radius:20px;background:#fff;box-shadow:0 -4px 20px rgba(0,0,0,0.15);display:flex;flex-direction:column;z-index:9999;box-sizing:border-box;transition:transform 0.3s cubic-bezier(0.25,1,0.5,1);touch-action:none;user-select:none;-webkit-user-select:none;}
+                .custom-modal.dragging{transition:none;}
+                .modal-handle-area{padding:12px 0;cursor:grab;touch-action:none;display:flex;justify-content:center;align-items:center;flex-shrink:0;}
+                .modal-handle-bar{width:60px;height:6px;background:#d1d5db;border-radius:10px;pointer-events:none;}
+                .modal-content{flex:1;overflow-y:auto;padding:10px 20px 20px;box-sizing:border-box;touch-action:pan-y;}
+            </style>`;
             $("head").append(modalCss);
             $("body").append(
-                `<div class="custom-modal"><div class="modal-handle-area"><div class="modal-handle-bar"></div></div><div class="modal-content"><p>コンテンツ</p></div></div>`,
+               `<div class="custom-modal">
+                    <div class="modal-handle-area">
+                        <div class="modal-handle-bar"></div>
+                    </div>
+                    <div class="modal-content">
+                        <p>コンテンツ</p>
+                    </div>
+                </div>`,
             );
             const $m = $(".custom-modal"),
                 h = $m.outerHeight();
