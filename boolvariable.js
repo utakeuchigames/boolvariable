@@ -558,6 +558,7 @@
             modal.appendChild(select);
         }
         test() {
+            /*
             const modalCss = `<style>
                 .custom-modal{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(0);width:90%;max-width:500px;height:400px;border-top-left-radius:20px;border-top-right-radius:20px;background:#fff;box-shadow:0 -4px 20px rgba(0,0,0,0.15);display:flex;flex-direction:column;z-index:9999;box-sizing:border-box;transition:transform 0.3s cubic-bezier(0.25,1,0.5,1);touch-action:none;user-select:none;-webkit-user-select:none;}
                 .custom-modal.dragging{transition:none;}
@@ -607,6 +608,23 @@
                     $m.css("transform", `translateX(-50%) translateY(${h}px)`);
                     setTimeout(() => $m.remove(), 300);
                 }
+            });
+            */
+            createCustomModal({
+                title: "設定メニュー",
+                text: "ここに説明のテキストが入るよ。",
+                extraHtml: `
+                    <input type="text" id="modal-input" placeholder="ここに入力" style="width:100%;padding:10px;margin-bottom:15px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
+                    <label style="display:block;margin-bottom:10px;"><input type="radio" name="opt" value="1" checked> ラジオ1</label>
+                    <label style="display:block;margin-bottom:10px;"><input type="radio" name="opt" value="2"> ラジオ2</label>
+                `,
+                customCss: `
+                    /* モーダルに関係しない、または追加したい独自のCSS */
+                    .custom-modal input[type="text"]:focus {
+                        border-color: #3b82f6;
+                        outline: none;
+                    }
+                `
             });
         }
         setBool(args, util) {
