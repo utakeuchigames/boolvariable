@@ -69,9 +69,34 @@
     // boolvariableassets.prompt の実装
 const BoolVariableAssets = {
     prompt(title, defaultText, callback) {
-        // すでにモーダルが出てたら重複して出ないようにする
         if ($('.ReactModalPortal').length > 0) return;
 
+        // 1. 現在編集中のターゲットがStage（背景）かどうかを判定
+        let isStage = false;
+        try {
+            const editingTarget = Scratch.vm.runtime.getEditingTarget();
+            isStage = !editingTarget || editingTarget.isStage;
+        } catch (e) {
+            // 万が一取得できなかった場合のフォールバック
+            isStage = false;
+        }
+
+        // 2. ステージかスプライトかで、スコープ選択部分のHTMLを切り替え
+        let scopeHtml = '';
+        if (isStage) {
+            scopeHtml = `
+            <div class="prompt_options-row_36JmB box_box_2jjDp">
+                <span style="font-size: 12px; color: #575e75;">この変数はすべてのスプライトで利用できます</span>
+            </div>`;
+        } else {
+            scopeHtml = `
+            <div class="prompt_options-row_36JmB box_box_2jjDp">
+                <label><input name="variableScopeOption" type="radio" value="global" checked=""><span>すべてのスプライト用</span></label>
+                <label><input name="variableScopeOption" type="radio" value="local"><span>このスプライトのみ</span></label>
+            </div>`;
+        }
+
+        // 3. モーダル全体のHTML
         const modalHtml = `
         <div class="ReactModalPortal">
             <div class="ReactModal__Overlay ReactModal__Overlay--after-open modal_modal-overlay_1Lcbx">
@@ -91,10 +116,7 @@ const BoolVariableAssets = {
                                 <input class="prompt_variable-name-text-input_1iu8- modal-input-val" name="${defaultText}" value="" autocomplete="off">
                             </div>
                             <div>
-                                <div class="prompt_options-row_36JmB box_box_2jjDp">
-                                    <label><input name="variableScopeOption" type="radio" value="global" checked=""><span>すべてのスプライト用</span></label>
-                                    <label><input name="variableScopeOption" type="radio" value="local"><span>このスプライトのみ</span></label>
-                                </div>
+                                ${scopeHtml}
                             </div>
                             <div class="prompt_button-row_3Wc5Z box_box_2jjDp">
                                 <button class="modal-cancel-btn"><span>キャンセル</span></button>
@@ -106,33 +128,28 @@ const BoolVariableAssets = {
             </div>
         </div>`;
 
-        // bodyにモーダルを追加し、ReactModalの背景固定クラスを付与
         $('body').append(modalHtml).addClass('ReactModal__Body--open');
 
-        // インプレッション時にテキストボックスへフォーカスを当てる
         const $input = $('.modal-input-val');
         setTimeout(() => $input.focus(), 50);
 
-        // 閉じて片付ける共通処理
         const closeModal = () => {
             $('.ReactModalPortal').remove();
             $('body').removeClass('ReactModal__Body--open');
         };
 
-        // OKボタンが押されたときの処理
         const handleOk = () => {
             const name = $input.val();
-            const scope = $('input[name="variableScopeOption"]:checked').val();
+            // ステージの場合は強制的に global、スプライトなら選択されたものを取得
+            const scope = isStage ? 'global' : ($('input[name="variableScopeOption"]:checked').val() || 'global');
             closeModal();
             if (callback) {
                 callback(name, null, { scope: scope });
             }
         };
 
-        // イベントリスナーの設定
         $('.modal-ok-btn').on('click', handleOk);
         
-        // EnterキーでもOKできるようにする
         $input.on('keydown', e => {
             if (e.key === 'Enter') {
                 handleOk();
@@ -140,7 +157,6 @@ const BoolVariableAssets = {
         });
 
         $('.modal-cancel-btn, .modal-close-btn, .ReactModal__Overlay').on('click', e => {
-            // オーバーレイ自体のクリックか、キャンセル/閉じるボタンのときだけ閉じる
             if (e.target === e.currentTarget || $(e.target).closest('.modal-cancel-btn, .modal-close-btn').length) {
                 closeModal();
             }
