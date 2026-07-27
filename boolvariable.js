@@ -66,6 +66,87 @@
             }
         });
     }
+    // boolvariableassets.prompt の実装
+const BoolVariableAssets = {
+    prompt(title, defaultText, callback) {
+        // すでにモーダルが出てたら重複して出ないようにする
+        if ($('.ReactModalPortal').length > 0) return;
+
+        const modalHtml = `
+        <div class="ReactModalPortal">
+            <div class="ReactModal__Overlay ReactModal__Overlay--after-open modal_modal-overlay_1Lcbx">
+                <div class="ReactModal__Content ReactModal__Content--after-open modal_modal-content_1h3ll prompt_modal-content_1BfWj" tabindex="-1" role="dialog" aria-label="${title}">
+                    <div class="box_box_2jjDp" dir="ltr" style="flex-direction: column; flex-grow: 1;">
+                        <div class="modal_header_1h7ps">
+                            <div class="modal_header-item_2zQTd modal_header-item-title_tLOU5">${title}</div>
+                            <div class="modal_header-item_2zQTd modal_header-item-close_2XDeL">
+                                <div aria-label="Close" class="close-button_close-button_lOp2G close-button_large_2oadS modal-close-btn" role="button" tabindex="0">
+                                    <img class="close-button_close-icon_HBCuO" src="data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3LjQ4IDcuNDgiPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDpub25lO3N0cm9rZTojZmZmO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2Utd2lkdGg6MnB4O308L3N0eWxlPjwvZGVmcz48dGl0bGU+aWNvbi0tYWRkPC90aXRsZT48bGluZSBjbGFzcz0iY2xzLTEiIHgxPSIzLjc0IiB5MT0iNi40OCIgeDI9IjMuNzQiIHkyPSIxIi8+PGxpbmUgY2xhc3M9ImNscy0xIiB4MT0iMSIgeTE9IjMuNzQiIHgyPSI2LjQ4IiB5Mj0iMy43NCIvPjwvc3ZnPg==" draggable="false">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="prompt_body_18Z-I box_box_2jjDp">
+                            <div class="prompt_label_tWjYZ box_box_2jjDp">${defaultText}</div>
+                            <div class="box_box_2jjDp">
+                                <input class="prompt_variable-name-text-input_1iu8- modal-input-val" name="${defaultText}" value="" autocomplete="off">
+                            </div>
+                            <div>
+                                <div class="prompt_options-row_36JmB box_box_2jjDp">
+                                    <label><input name="variableScopeOption" type="radio" value="global" checked=""><span>すべてのスプライト用</span></label>
+                                    <label><input name="variableScopeOption" type="radio" value="local"><span>このスプライトのみ</span></label>
+                                </div>
+                            </div>
+                            <div class="prompt_button-row_3Wc5Z box_box_2jjDp">
+                                <button class="modal-cancel-btn"><span>キャンセル</span></button>
+                                <button class="prompt_ok-button_3QFdD modal-ok-btn"><span>OK</span></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        // bodyにモーダルを追加し、ReactModalの背景固定クラスを付与
+        $('body').append(modalHtml).addClass('ReactModal__Body--open');
+
+        // インプレッション時にテキストボックスへフォーカスを当てる
+        const $input = $('.modal-input-val');
+        setTimeout(() => $input.focus(), 50);
+
+        // 閉じて片付ける共通処理
+        const closeModal = () => {
+            $('.ReactModalPortal').remove();
+            $('body').removeClass('ReactModal__Body--open');
+        };
+
+        // OKボタンが押されたときの処理
+        const handleOk = () => {
+            const name = $input.val();
+            const scope = $('input[name="variableScopeOption"]:checked').val();
+            closeModal();
+            if (callback) {
+                callback(name, null, { scope: scope });
+            }
+        };
+
+        // イベントリスナーの設定
+        $('.modal-ok-btn').on('click', handleOk);
+        
+        // EnterキーでもOKできるようにする
+        $input.on('keydown', e => {
+            if (e.key === 'Enter') {
+                handleOk();
+            }
+        });
+
+        $('.modal-cancel-btn, .modal-close-btn, .ReactModal__Overlay').on('click', e => {
+            // オーバーレイ自体のクリックか、キャンセル/閉じるボタンのときだけ閉じる
+            if (e.target === e.currentTarget || $(e.target).closest('.modal-cancel-btn, .modal-close-btn').length) {
+                closeModal();
+            }
+        });
+    }
+};
     const toastConfig = {
         soundWhenEnabled: "true",
     };
@@ -445,7 +526,7 @@
         createUI() {
             try {
                 const self = this;
-                myScratchBlocks.prompt(
+                boolvariableassets.prompt(
                     "新しい変数名:",
                     "",
                     (name, more_vars, { scope }) => {
