@@ -16,6 +16,56 @@
         const hexRegex = /^#[0-9A-F]{6}$/i;
         return hexRegex.test(colour);
     }
+    function createCustomModal({ title = '', text = '', extraHtml = '', customCss = '' } = {}) {
+        if (customCss) {
+            $('head').append(`<style>${customCss}</style>`);
+        }
+        const baseCss = `<style>
+            .custom-modal{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(0);width:90%;max-width:500px;height:400px;border-top-left-radius:20px;border-top-right-radius:20px;background:#fff;box-shadow:0 -4px 20px rgba(0,0,0,0.15);display:flex;flex-direction:column;z-index:9999;box-sizing:border-box;transition:transform 0.3s cubic-bezier(0.25,1,0.5,1);touch-action:none;user-select:none;-webkit-user-select:none;}
+            .custom-modal.dragging{transition:none;}
+            .modal-handle-area{padding:12px 0;cursor:grab;touch-action:none;display:flex;justify-content:center;align-items:center;flex-shrink:0;}
+            .modal-handle-bar{width:60px;height:6px;background:#d1d5db;border-radius:10px;pointer-events:none;}
+            .modal-content{flex:1;overflow-y:auto;padding:10px 20px 20px;box-sizing:border-box;touch-action:pan-y;user-select:text;-webkit-user-select:text;}
+        </style>`;
+        if (!$('#custom-modal-base-style').length) {
+            $('head').append(`<div id="custom-modal-base-style">${baseCss}</div>`);
+        }
+        const modalHtml = `
+        <div class="custom-modal">
+            <div class="modal-handle-area"><div class="modal-handle-bar"></div></div>
+            <div class="modal-content">
+                ${title ? `<p style="margin-top:0;font-weight:bold;font-size:18px;">${title}</p>` : ''}
+                ${text ? `<p>${text}</p>` : ''}
+                ${extraHtml}
+            </div>
+        </div>`;
+        $('body').append(modalHtml);
+        const $m = $('.custom-modal').last();
+        const h = $m.outerHeight();
+        let sy = 0, cy = 0, flag = false;
+        $m.find('.modal-handle-area').on('touchstart mousedown', e => {
+            flag = true;
+            $m.addClass('dragging');
+            sy = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+            cy = 0;
+        });
+        $(window).on('touchmove.modal', e => {
+            if (!flag) return;
+            cy = Math.max(0, (e.type === 'touchmove' ? e.touches[0].clientY : e.clientY) - sy);
+            $m.css('transform', `translateX(-50%) translateY(${cy}px)`);
+        });
+        $(window).on('touchend.modal mouseup.modal', () => {
+            if (!flag) return;
+            flag = false;
+            $m.removeClass('dragging');
+            if ((1 - cy / h) >= 0.7) {
+                $m.css('transform', 'translateX(-50%) translateY(0px)');
+            } else {
+                $m.css('transform', `translateX(-50%) translateY(${h}px)`);
+                setTimeout(() => $m.remove(), 300);
+            }
+        });
+    }
     const toastConfig = {
         soundWhenEnabled: "true",
     };
@@ -611,12 +661,12 @@
             });
             */
             createCustomModal({
-                title: "設定メニュー",
-                text: "ここに説明のテキストが入るよ。",
+                title: "新しい変数",
+                text: "新しい変数名:",
                 extraHtml: `
-                    <input type="text" id="modal-input" placeholder="ここに入力" style="width:100%;padding:10px;margin-bottom:15px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
-                    <label style="display:block;margin-bottom:10px;"><input type="radio" name="opt" value="1" checked> ラジオ1</label>
-                    <label style="display:block;margin-bottom:10px;"><input type="radio" name="opt" value="2"> ラジオ2</label>
+                    <input type="text" id="modal-input" placeholder="" style="width:100%;padding:10px;margin-bottom:15px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
+                    <label style="display:block;margin-bottom:10px;"><input type="radio" name="opt" value="global" checked>すべてのスプライト用</label>
+                    <label style="display:block;margin-bottom:10px;"><input type="radio" name="opt" value="local">このスプライト用</label>
                 `,
                 customCss: `
                     /* モーダルに関係しない、または追加したい独自のCSS */
