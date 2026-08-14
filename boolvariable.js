@@ -519,6 +519,24 @@ const BoolVariableAssets = {
                             },
                         },
                     },
+                    
+                    {
+                        opcode: "setFps",
+                        text: "fpsを [40a10f17b0716421] にする",
+                        blockType: "command",
+                        arguments: {
+                            "fps": {
+                                type: "number",
+                                defaultValue: 30,
+                            },
+                        },
+                    },
+                    {
+                        opcode: "fps",
+                        text: "fps",
+                        blockType: "reporter",
+                        arguments: {},
+                    },
                 ],
                 menus: {
                     boolVariableMenu: {
@@ -837,6 +855,12 @@ const BoolVariableAssets = {
                 await new Promise((resolve) => requestAnimationFrame(resolve));
             }
         }
+        async setFps(args) {
+            Scratch.vm.runtime.frameLoop.setFramerate(args["40a10f17b0716421"]);
+        }
+        async fps(args) {
+            return Scratch.vm.runtime.frameLoop.framerate;
+        }
     }
     const Boolvariableextension = new Boolvariable();
     vm.runtime.on("BEFORE_EXECUTE", () => {
@@ -850,43 +874,4 @@ const BoolVariableAssets = {
         previousTime = now;
     });
     Scratch.extensions.register(Boolvariableextension);
-    class utgamesboolvaromake {
-        getInfo() {
-            return {
-                id: "utgamesboolvaromake",
-                name: "Bool値変数拡張おまけ",
-                menuIconURI: icon,
-                color1: "#ff8c1a",
-                color2: "#ff8000",
-                color3: "#db6d00",
-                blocks: [
-                    {
-                        opcode: "block_f479817eb168e994",
-                        text: "fpsを [40a10f17b0716421] にする",
-                        blockType: "command",
-                        arguments: {
-                            "40a10f17b0716421": {
-                                type: "number",
-                                defaultValue: 30,
-                            },
-                        },
-                    },
-                    {
-                        opcode: "block_967e0e151ca23370",
-                        text: "fps",
-                        blockType: "reporter",
-                        arguments: {},
-                    },
-                ],
-            };
-        }
-        async block_f479817eb168e994(args) {
-            Scratch.vm.runtime.frameLoop.setFramerate(args["40a10f17b0716421"]);
-        }
-        async block_967e0e151ca23370(args) {
-            return Scratch.vm.runtime.frameLoop.framerate;
-        }
-    }
-    let utgamesboolvaromake_object = new utgamesboolvaromake();
-    Scratch.extensions.register(utgamesboolvaromake_object);
 })(Scratch);
