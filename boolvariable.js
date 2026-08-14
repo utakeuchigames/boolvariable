@@ -522,7 +522,7 @@ const BoolVariableAssets = {
                     
                     {
                         opcode: "setFps",
-                        text: "fpsを [40a10f17b0716421] にする",
+                        text: "fpsを [fps] にする",
                         blockType: "command",
                         arguments: {
                             "fps": {
