@@ -856,7 +856,7 @@ const BoolVariableAssets = {
             }
         }
         async setFps(args) {
-            Scratch.vm.runtime.frameLoop.setFramerate(args["40a10f17b0716421"]);
+            Scratch.vm.runtime.frameLoop.setFramerate(args["fps"]);
         }
         async fps(args) {
             return Scratch.vm.runtime.frameLoop.framerate;
