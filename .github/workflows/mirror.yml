@@ -1,0 +1,51 @@
+name: Cross-Repository Specific Sync
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  repo-mirror:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. assetsリポジトリ（コピー元）を取得
+      - name: Checkout Source (assets repo)
+        uses: actions/checkout@v4
+        with:
+          path: source-repo
+
+      # 2. toolリポジトリ（コピー先）を「MIRROR_TOKEN」で認証して取得
+      # ここで token を指定することで、この後のステップでもその権限が引き継がれます
+      - name: Checkout Destination (tool repo)
+        uses: actions/checkout@v4
+        with:
+          repository: 'utakeuchigames/tool'
+          token: ${{ secrets.MIRROR_TOKEN }}
+          path: dest-repo
+
+      # 3. 指定フォルダを上書き同期
+      - name: Sync Files
+        run: |
+          rm -rf dest-repo/boolvariable
+          mkdir -p dest-repo/boolvariable
+          rsync -av --exclude='.git' --exclude='.github' source-repo/ dest-repo/assets/
+
+      # 4. toolリポジトリ側へPush
+      # URLを直接いじらず、通常の git push を行います
+      - name: Commit and Push to tool repo
+        run: |
+          cd dest-repo
+          git config user.name "utakeuchigames"
+          git config user.email "yamaki3970+1@gmail.com"
+          
+          git add -A
+          
+          if ! git diff-index --quiet HEAD; then
+            COMMIT_MSG=$(cd ../source-repo && git log -1 --pretty=%B)
+            git commit -m "sync: $COMMIT_MSG"
+            # ステップ2で認証済みなので、単純な push origin で動きます
+            git push origin HEAD:main
+          else
+            echo "No changes detected. Skipping sync."
+          fi
