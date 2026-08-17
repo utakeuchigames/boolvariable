@@ -498,6 +498,129 @@
                 );
             } catch (err) {}
         }
+        createUI_turbowarp(){
+            if (this.isUIOpen) return;
+            this.isUIOpen = true;
+
+            const editingTarget = Scratch.vm.runtime.getEditingTarget();
+            const isStage = editingTarget ? !!editingTarget.isStage : false;
+            const currentTargetId = editingTarget ? (editingTarget.id ?? 'stage') : 'stage';
+
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background-color:var(--ui-modal-overlay,rgba(0,0,0,0.55));color:var(--ui-modal-foreground,#333333);display:flex;justify-content:center;align-items:center;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;`;
+
+            const dialog = document.createElement('div');
+            dialog.style.cssText = `background-color:var(--ui-modal-background,#ffffff);width:360px;outline:none;border:4px solid #ff8787;padding:0;border-radius:0.5rem;user-select:none;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow,0px 4px 15px rgba(0,0,0,0.3));`;
+            
+            dialog.innerHTML = `
+                <div style="display:flex;flex-direction:row;flex-wrap:nowrap;justify-content:space-between;align-items:center;height:3.125rem;width:100%;background-color:#ff4c4c;color:#ffffff;font-size:1rem;font-weight:normal;">
+                    <div style="width:3.125rem;height:100%;"></div>
+                    <div style="flex-grow:1;text-align:center;letter-spacing:0.4px;cursor:default;font-weight:bold;">新しい変数</div>
+                    <div style="width:3.125rem;height:100%;display:flex;justify-content:center;align-items:center;z-index:1;">
+                        <button id="ceoCloseXBtn" style="background:none;border:none;color:inherit;font-size:1.25rem;cursor:pointer;padding:0;width:100%;height:100%;">✕</button>
+                    </div>
+                </div>
+                <div style="background:var(--ui-modal-background,#ffffff);padding:1.5rem 2.25rem;display:flex;flex-direction:column;">
+                    <div style="font-weight:500;margin:0 0 0.75rem;font-size:14px;color:var(--text-primary,#575e75);text-align:left;">新しい変数名:</div>
+                    <input type="text" id="varInput" style="margin-bottom:1.5rem;width:100%;border:1px solid var(--ui-black-transparent,rgba(0,0,0,0.15));border-radius:calc(0.5rem / 2);padding:0 1rem;height:3rem;color:var(--text-primary,#333333);background-color:var(--input-background,#ffffff);font-size:.875rem;outline:none;box-sizing:border-box;" autofocus />
+                    <div style="display:flex;font-weight:normal;justify-content:space-between;margin-bottom:1.5rem;font-size:.875rem;color:var(--text-primary,#575e75);">
+                        ${isStage ? `
+                            <span style="font-size: 13px; color: var(--text-primary-alpha, #747474); line-height: 1.4; text-align: left;">ステージで作った変数は基本的にすべてのスプライトで使用できます</span>
+                        ` : `
+                            <label style="display:flex;align-items:center;cursor:pointer;">
+                                <input type="radio" name="variableScopeOption" value="global" checked style="margin:3px 6px 3px 3px;width:16px;height:16px;" />
+                                <span>すべてのスプライト用</span>
+                            </label>
+                            <label style="display:flex;align-items:center;cursor:pointer;">
+                                <input type="radio" name="variableScopeOption" value="local" style="margin:3px 6px 3px 3px;width:16px;height:16px;" />
+                                <span>このスプライトのみ</span>
+                            </label>
+                        `}
+                    </div>
+                    <div style="font-weight:bolder;text-align:right;margin-top:1rem;">
+                        <button id="cancelBtn" style="padding:0.75rem 1rem;border-radius:0.25rem;background:var(--ui-white,#ffffff);color:var(--text-primary,#333333);border:1px solid var(--ui-black-transparent,rgba(0,0,0,0.15));font-weight:600;font-size:0.85rem;cursor:pointer;outline:none;">キャンセル</button>
+                        <button id="okBtn" style="padding:0.75rem 1rem;border-radius:0.25rem;background:#ff4c4c;border:1px solid #ff4c4c;color:#ffffff;font-weight:600;font-size:0.85rem;cursor:pointer;outline:none;margin-left:0.5rem;">OK</button>
+                    </div>
+                </div>
+            `;
+
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+
+            setTimeout(() => {
+                const inputField = document.getElementById('varInput');
+                if (inputField) inputField.focus();
+            }, 50);
+
+            const close = () => {
+                overlay.remove(); 
+                this.isUIOpen = false;
+            };
+
+            overlay.onclick = (e) => {
+                if (e.target === overlay) close();
+            };
+
+            document.getElementById('ceoCloseXBtn').onclick = close;
+            document.getElementById('cancelBtn').onclick = close;
+
+            document.getElementById('okBtn').onclick = () => {
+                const name = document.getElementById('varInput').value;
+                if (name && name.trim() !== "") {
+                    const trimmedName = name.trim();
+                    const scopeValue = (document.querySelector('input[name="variableScopeOption"]:checked') ?? { value: 'global' }).value;
+                    
+                    const isLocal = isStage ? false : (scopeValue === 'local');
+                    const targetId = isLocal ? currentTargetId : 'stage';
+                    
+                    let isDuplicate = false;
+
+                    for (const existingKey of Object.keys(this.boolVariables)) {
+                        const info = this.boolVariablesinfo[existingKey];
+                        const existingDisplayName = info ? (info.displayName ?? existingKey) : existingKey;
+
+                        if (existingDisplayName === trimmedName) {
+                            if (!isLocal) {
+                                isDuplicate = true;
+                                break;
+                            } else {
+                                if (!info || !info.isLocal || info.targetId === targetId) {
+                                    isDuplicate = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (isDuplicate) {
+                        alert(`❌ エラー: 「${trimmedName}」という名前の変数はすでに存在するか、競合するため作成できません！`);
+                        return;
+                    }
+
+                    const internalKey = isLocal ? `${targetId}_${trimmedName}` : trimmedName;
+                    
+                    this.boolVariables[internalKey] = false;
+                    this.boolVariablesinfo[internalKey] = {
+                        isLocal: isLocal,
+                        targetId: targetId,
+                        displayName: trimmedName
+                    };
+                    
+                    setTimeout(() => {
+                        if (Scratch.vm && Scratch.vm.runtime) {
+                            Scratch.vm.runtime.requestBlocksDisplayUpdate();
+                        }
+                    }, 50);
+                }
+                close();
+            };
+
+            document.getElementById('varInput').onkeypress = (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('okBtn').click();
+                }
+            };
+        }
         getVariableMenuItems(currentlySelectedValue) {
             const menuItems = [];
             const currentTarget = Scratch.vm.runtime.getEditingTarget();
