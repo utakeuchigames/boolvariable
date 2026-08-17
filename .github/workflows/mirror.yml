@@ -29,7 +29,7 @@ jobs:
         run: |
           rm -rf dest-repo/boolvariable
           mkdir -p dest-repo/boolvariable
-          rsync -av --exclude='.git' --exclude='.github' source-repo/ dest-repo/assets/
+          rsync -av --exclude='.git' --exclude='.github' source-repo/ dest-repo/boolvariable/
 
       # 4. toolリポジトリ側へPush
       # URLを直接いじらず、通常の git push を行います
