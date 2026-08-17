@@ -234,11 +234,19 @@ const BoolVariableAssets = {
     }
     class Boolvariable {
         static customId = "boolvariable";
-        constructor() {
-            this.boolVariables = { a: false };
-            this.boolVariablesinfo = {
-                a: { isLocal: false, targetId: "stage", displayName: "a" },
+        serialize() {
+            return {
+                boolVariables: this.boolVariables,
+                boolVariablesinfo: this.boolVariablesinfo,
             };
+        }
+        deserialize(data) {
+            this.boolVariables = data.boolVariables;
+            this.boolVariablesinfo = data.boolVariablesinfo;
+        }
+        constructor() {
+            this.boolVariables = {};
+            this.boolVariablesinfo = {};
             this.isUIOpen = false;
             this.isDelUIOpen = false;
             this.frameCount = 0;
