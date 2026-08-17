@@ -450,8 +450,8 @@
         }
         createUI() {
             if(!ispenguin){
-                this.createUI_turbowarp();
-                return;
+                //this.createUI_turbowarp();
+                //return;
             }
             try {
                 const self = this;
@@ -658,6 +658,7 @@
         }
         async createDeleteUI() {
             if(!ispenguin){
+                console.log(ScratchBlocks);
                 this.createDeleteUI_turbowarp();
                 return;
             }
