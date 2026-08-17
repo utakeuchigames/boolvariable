@@ -496,6 +496,7 @@
                             targetId: targetId,
                             displayName: trimmedName,
                         };
+                        this.refreshBlocks();
                         return;
                     },
                     "新しい変数",
@@ -724,6 +725,7 @@
                                 this.refreshBlocks();
                             }
                             this.isDelUIOpen = false;
+                            this.refreshBlocks();
                         },
                     },
                     {
