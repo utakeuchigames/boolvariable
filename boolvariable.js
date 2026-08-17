@@ -450,7 +450,7 @@
         createUI() {
             try {
                 const self = this;
-                BoolVariableAssets.prompt(
+                myScratchBlocks.prompt(
                     "新しい変数名:",
                     "",
                     (name, more_vars, { scope }) => {
@@ -586,16 +586,10 @@
                             const dispname =
                                 select.options[select.selectedIndex].text;
 
-                            if (
-                                confirm(
-                                    `本当に bool値「${dispname}」を完全に削除しますか？`,
-                                )
-                            ) {
+                            if (confirm(`本当に bool値「${dispname}」を完全に削除しますか？`)) {
                                 delete this.boolVariables[selectedKey];
                                 delete this.boolVariablesinfo[selectedKey];
-                                alert(
-                                    `🎉 bool値「${dispname}」を完全に削除しました！`,
-                                );
+                                alert(`🎉 bool値「${dispname}」を完全に削除しました！`,);
                                 this.refreshBlocks();
                             }
                             this.isDelUIOpen = false;
@@ -665,7 +659,7 @@
                 }
             });
             */
-            createCustomModal({
+            createCustomModal(){
                 title: "新しい変数",
                 text: "新しい変数名:",
                 extraHtml: `
@@ -674,7 +668,6 @@
                     <label style="display:block;margin-bottom:10px;"><input type="radio" name="opt" value="local">このスプライト用</label>
                 `,
                 customCss: `
-                    /* モーダルに関係しない、または追加したい独自のCSS */
                     .custom-modal input[type="text"]:focus {
                         border-color: #3b82f6;
                         outline: none;
