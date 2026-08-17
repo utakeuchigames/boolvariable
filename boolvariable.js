@@ -659,7 +659,7 @@
                 }
             });
             */
-            createCustomModal(){
+            createCustomModal({
                 title: "新しい変数",
                 text: "新しい変数名:",
                 extraHtml: `
