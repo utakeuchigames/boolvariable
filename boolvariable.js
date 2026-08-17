@@ -303,7 +303,7 @@
                         text: "真偽値変数",
                     },
                     {
-                        opcode: "createUI",
+                        func: "createUI",
                         blockType: Scratch.BlockType.BUTTON,
                         text: "変数作成フォームを開く",
                     },
