@@ -606,6 +606,90 @@
             );
             modal.appendChild(select);
         }
+        createDeleteUI_turbowarp(){
+            if (this.isDelUIOpen) return;
+            this.isDelUIOpen = true;
+
+            setTimeout(() => {
+                const currentTarget = Scratch.vm.runtime.getEditingTarget();
+                const currentTargetId = currentTarget ? (currentTarget.id ?? 'stage') : 'stage';
+
+                const deleteableKeys = Object.keys(this.boolVariables).filter(internalKey => {
+                    const info = this.boolVariablesinfo[internalKey];
+                    if (!info) return true;
+                    return !info.isLocal || info.targetId === currentTargetId;
+                });
+
+                if (deleteableKeys.length === 0) {
+                    alert("❌ 削除できる変数がありません！");
+                    this.isDelUIOpen = false; 
+                    return;
+                }
+
+                const overlay = document.createElement('div');
+                overlay.style.cssText = `position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background-color:rgba(0,0,0,0.6);display:flex;justify-content:center;align-items:center;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;`;
+
+                const dialog = document.createElement('div');
+                dialog.style.cssText = `background-color:#ffffff;width:340px;border:4px solid #ff4c4c;border-radius:0.5rem;overflow:hidden;display:flex;flex-direction:column;box-shadow:0px 4px 15px rgba(0,0,0,0.3);`;
+
+                let optionsHtml = '';
+                for (const key of deleteableKeys) {
+                    const info = this.boolVariablesinfo[key];
+                    const disp = info ? (info.displayName ?? key) : key;
+                    const typeText = info ? (info.isLocal ? '[ローカル]' : '[グローバル]') : '[不明]';
+                    optionsHtml += `<option value="${key}">${typeText} ${disp}</option>`;
+                }
+
+                dialog.innerHTML = `
+                    <div style="height:3rem;background-color:#ff4c4c;color:#ffffff;display:flex;justify-content:center;align-items:center;font-weight:bold;font-size:1rem;">
+                        変数の削除
+                    </div>
+                    <div style="padding:1.5rem;display:flex;flex-direction:column;">
+                        <div style="font-size:14px;color:#575e75;margin-bottom:0.75rem;text-align:left;">削除する変数を選択してください:</div>
+                        <select id="deleteSelect" style="width:100%;height:2.5rem;border:1px solid #ccc;border-radius:4px;padding:0 0.5rem;font-size:14px;margin-bottom:1.5rem;background:#fff;outline:none;color:#000;">
+                            ${optionsHtml}
+                        </select>
+                        <div style="text-align:right;">
+                            <button id="cancelDelBtn" style="padding:0.5rem 1rem;border-radius:4px;background:#fff;color:#333;border:1px solid #ccc;font-weight:600;cursor:pointer;outline:none;">キャンセル</button>
+                            <button id="executeDelBtn" style="padding:0.5rem 1rem;border-radius:4px;background:#ff4c4c;color:#fff;border:none;font-weight:600;cursor:pointer;outline:none;margin-left:0.5rem;">削除実行</button>
+                        </div>
+                    </div>
+                `;
+
+                overlay.appendChild(dialog);
+                document.body.appendChild(overlay);
+
+                const closeDel = () => {
+                    overlay.remove();
+                    this.isDelUIOpen = false; 
+                };
+
+                document.getElementById('cancelDelBtn').onclick = closeDel;
+                overlay.onclick = (e) => { if (e.target === overlay) closeDel(); };
+
+                document.getElementById('executeDelBtn').onclick = () => {
+                    const targetKey = document.getElementById('deleteSelect').value;
+                    const info = this.boolVariablesinfo[targetKey];
+                    const dispName = info ? (info.displayName ?? targetKey) : targetKey;
+
+                    if (confirm(`本当に bool値「${dispName}」を完全に削除しますか？\n(この変数を使用している他のブロックは初期状態に戻ります)`)) {
+                        delete this.boolVariables[targetKey];
+                        delete this.boolVariablesinfo[targetKey];
+
+                        closeDel();
+                        
+                        setTimeout(() => {
+                            alert(`🎉 bool値「${dispName}」を完全に削除しました！`);
+                            if (Scratch.vm && Scratch.vm.runtime) {
+                                Scratch.vm.runtime.requestBlocksDisplayUpdate();
+                            }
+                        }, 100);
+                        return;
+                    }
+                    closeDel();
+                };
+            }, 100); 
+        }
         test() {
             /*
             const modalCss = `<style>
