@@ -450,7 +450,7 @@
         }
         createUI() {
             if(!ispenguin){
-                createUI_turbowarp();
+                this.createUI_turbowarp();
             }
             try {
                 const self = this;
@@ -659,7 +659,7 @@
         }
         async createDeleteUI() {
             if(!ispenguin){
-                createDeleteUI_turbowarp();
+                this.createDeleteUI_turbowarp();
             }
             const currentTarget = Scratch.vm.runtime.getEditingTarget();
             const currentTargetId = currentTarget
