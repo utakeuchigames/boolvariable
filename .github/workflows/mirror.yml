@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # 1. assetsリポジトリ（コピー元）を取得
-      - name: Checkout Source (assets repo)
+      - name: Checkout Source (boolvariable repo)
         uses: actions/checkout@v4
         with:
           path: source-repo
