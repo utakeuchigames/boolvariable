@@ -449,7 +449,7 @@
             };
         }
         createUI() {
-            if(ispenguin){
+            if(!ispenguin){
                 createUI_turbowarp();
             }
             try {
@@ -658,7 +658,7 @@
             return menuItems;
         }
         async createDeleteUI() {
-            if(ispenguin){
+            if(!ispenguin){
                 createDeleteUI_turbowarp();
             }
             const currentTarget = Scratch.vm.runtime.getEditingTarget();
