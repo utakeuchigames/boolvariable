@@ -1,4 +1,4 @@
-this.refreshBlocks();(async (Scratch) => {
+(async (Scratch) => {
     "use strict";
     const ispenguin = Scratch.extensions.isPenguinMod ?? false;
     const icon = "https://utakeuchigames.github.io/boolvariable/favicon.svg";
