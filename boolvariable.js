@@ -1,4 +1,4 @@
-(async (Scratch) => {
+this.refreshBlocks();(async (Scratch) => {
     "use strict";
     const ispenguin = Scratch.extensions.isPenguinMod ?? false;
     const icon = "https://utakeuchigames.github.io/boolvariable/favicon.svg";
@@ -451,6 +451,7 @@
         createUI() {
             if(!ispenguin){
                 this.createUI_turbowarp();
+                return;
             }
             try {
                 const self = this;
@@ -611,9 +612,7 @@
                     };
                     
                     setTimeout(() => {
-                        if (Scratch.vm && Scratch.vm.runtime) {
-                            Scratch.vm.runtime.requestBlocksDisplayUpdate();
-                        }
+                        this.refreshBlocks();
                     }, 50);
                 }
                 close();
@@ -660,6 +659,7 @@
         async createDeleteUI() {
             if(!ispenguin){
                 this.createDeleteUI_turbowarp();
+                return;
             }
             const currentTarget = Scratch.vm.runtime.getEditingTarget();
             const currentTargetId = currentTarget
@@ -810,9 +810,7 @@
                         
                         setTimeout(() => {
                             alert(`🎉 bool値「${dispName}」を完全に削除しました！`);
-                            if (Scratch.vm && Scratch.vm.runtime) {
-                                Scratch.vm.runtime.requestBlocksDisplayUpdate();
-                            }
+                            this.refreshBlocks();
                         }, 100);
                         return;
                     }
