@@ -1,5 +1,6 @@
 (async (Scratch) => {
     "use strict";
+    const varsion = '1.0';
     const ispenguin = Scratch.extensions.isPenguinMod ?? false;
     const icon = "https://utakeuchigames.github.io/boolvariable/favicon.svg";
     const vm = Scratch.vm;
