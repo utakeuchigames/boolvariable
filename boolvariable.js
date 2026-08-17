@@ -1,6 +1,6 @@
 (async (Scratch) => {
     "use strict";
-    const penguinmod? = Scratch.extensions.isPenguinMod;
+    const ispenguin = Scratch.extensions.isPenguinMod;
     const icon = "https://utakeuchigames.github.io/boolvariable/favicon.svg";
     const vm = Scratch.vm;
     const { BlockType, ArgumentType, Cast } = Scratch;
@@ -449,7 +449,7 @@
             };
         }
         createUI() {
-            if(penguinmod?){
+            if(ispenguin){
                 createUI_turbowarp();
             }
             try {
@@ -658,7 +658,7 @@
             return menuItems;
         }
         async createDeleteUI() {
-            if(penguinmod?){
+            if(ispenguin){
                 createDeleteUI_turbowarp();
             }
             const currentTarget = Scratch.vm.runtime.getEditingTarget();
