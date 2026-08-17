@@ -449,6 +449,9 @@
             };
         }
         createUI() {
+            if(penguinmod?){
+                createUI_turbowarp();
+            }
             try {
                 const self = this;
                 myScratchBlocks.prompt(
@@ -655,6 +658,9 @@
             return menuItems;
         }
         async createDeleteUI() {
+            if(penguinmod?){
+                createDeleteUI_turbowarp();
+            }
             const currentTarget = Scratch.vm.runtime.getEditingTarget();
             const currentTargetId = currentTarget
                 ? (currentTarget.id ?? "stage")
