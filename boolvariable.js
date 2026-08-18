@@ -1,114 +1,73 @@
 (async (Scratch) => {
     "use strict";
-    const varsion = '1.0';
+    const varsion = '1.0.1';
     const ispenguin = Scratch.extensions.isPenguinMod ?? false;
     const icon = "https://utakeuchigames.github.io/boolvariable/favicon.svg";
     const vm = Scratch.vm;
-    const { BlockType, ArgumentType, Cast } = Scratch;
-    function xmlEscape(str) {
-        return str
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
-    }
+    const {BlockType, ArgumentType, Cast} = Scratch;
+    function xmlEscape(str) {return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");}
     function validColour(colour) {
         if (typeof colour != "string") return false;
         const hexRegex = /^#[0-9A-F]{6}$/i;
         return hexRegex.test(colour);
     }
-    function createCustomModal({ title = '', text = '', extraHtml = '', customCss = '' } = {}) {
+    function createCustomModal( {
+        title = '', text = '', extraHtml = '', customCss = ''
+    } = {}) {
         if (customCss) {
             $('head').append(`<style>${customCss}</style>`);
         }
         const baseCss = `<style>
-            .custom-modal{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(0);width:90%;max-width:500px;height:400px;border-top-left-radius:20px;border-top-right-radius:20px;background:#fff;box-shadow:0 -4px 20px rgba(0,0,0,0.15);display:flex;flex-direction:column;z-index:9999;box-sizing:border-box;transition:transform 0.3s cubic-bezier(0.25,1,0.5,1);touch-action:none;user-select:none;-webkit-user-select:none;}
-            .custom-modal.dragging{transition:none;}
-            .modal-handle-area{padding:12px 0;cursor:grab;touch-action:none;display:flex;justify-content:center;align-items:center;flex-shrink:0;}
-            .modal-handle-bar{width:60px;height:6px;background:#d1d5db;border-radius:10px;pointer-events:none;}
-            .modal-content{flex:1;overflow-y:auto;padding:10px 20px 20px;box-sizing:border-box;touch-action:pan-y;user-select:text;-webkit-user-select:text;}
+        .custom-modal{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(0);width:90%;max-width:500px;height:400px;border-top-left-radius:20px;border-top-right-radius:20px;background:#fff;box-shadow:0 -4px 20px rgba(0,0,0,0.15);display:flex;flex-direction:column;z-index:9999;box-sizing:border-box;transition:transform 0.3s cubic-bezier(0.25,1,0.5,1);touch-action:none;user-select:none;-webkit-user-select:none;}
+        .custom-modal.dragging{transition:none;}
+        .modal-handle-area{padding:12px 0;cursor:grab;touch-action:none;display:flex;justify-content:center;align-items:center;flex-shrink:0;}
+        .modal-handle-bar{width:60px;height:6px;background:#d1d5db;border-radius:10px;pointer-events:none;}
+        .modal-content{flex:1;overflow-y:auto;padding:10px 20px 20px;box-sizing:border-box;touch-action:pan-y;user-select:text;-webkit-user-select:text;}
         </style>`;
         if (!$('#custom-modal-base-style').length) {
             $('head').append(`<div id="custom-modal-base-style">${baseCss}</div>`);
         }
         const modalHtml = `
         <div class="custom-modal">
-            <div class="modal-handle-area"><div class="modal-handle-bar"></div></div>
-            <div class="modal-content">
-                ${title ? `<p style="margin-top:0;font-weight:bold;font-size:18px;">${title}</p>` : ''}
-                ${text ? `<p>${text}</p>` : ''}
-                ${extraHtml}
-            </div>
+        <div class="modal-handle-area"><div class="modal-handle-bar"></div></div>
+        <div class="modal-content">
+        ${title ? `<p style="margin-top:0;font-weight:bold;font-size:18px;">${title}</p>`: ''}
+        ${text ? `<p>${text}</p>`: ''}
+        ${extraHtml}
+        </div>
         </div>`;
         $('body').append(modalHtml);
         const $m = $('.custom-modal').last();
         const h = $m.outerHeight();
-        let sy = 0, cy = 0, flag = false;
+        let sy = 0,
+        cy = 0,
+        flag = false;
         $m.find('.modal-handle-area').on('touchstart mousedown', e => {
             flag = true;
             $m.addClass('dragging');
-            sy = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+            sy = e.type === 'touchstart' ? e.touches[0].clientY: e.clientY;
             cy = 0;
         });
         $(window).on('touchmove.modal', e => {
             if (!flag) return;
-            cy = Math.max(0, (e.type === 'touchmove' ? e.touches[0].clientY : e.clientY) - sy);
+            cy = Math.max(0, (e.type === 'touchmove' ? e.touches[0].clientY: e.clientY) - sy);
             $m.css('transform', `translateX(-50%) translateY(${cy}px)`);
         });
-        $(window).on('touchend.modal mouseup.modal', () => {
-            if (!flag) return;
-            flag = false;
-            $m.removeClass('dragging');
-            if ((1 - cy / h) >= 0.7) {
-                $m.css('transform', 'translateX(-50%) translateY(0px)');
-            } else {
-                $m.css('transform', `translateX(-50%) translateY(${h}px)`);
-                setTimeout(() => $m.remove(), 300);
-            }
-        });
+        $(window).on('touchend.modal mouseup.modal',
+            () => {
+                if (!flag) return;
+                flag = false;
+                $m.removeClass('dragging');
+                if ((1 - cy / h) >= 0.7) {
+                    $m.css('transform', 'translateX(-50%) translateY(0px)');
+                } else {
+                    $m.css('transform', `translateX(-50%) translateY(${h}px)`);
+                    setTimeout(() => $m.remove(), 300);
+                }
+            });
     }
-    const toastConfig = {
-        soundWhenEnabled: "true",
-    };
-    const defaultStyles = {
-        toast: {
-            "--toast-bg": "#1a1a1a",
-            "--toast-color": "#ffffff",
-            "--toast-font-size": "16px",
-            "--toast-border-radius": "16px",
-            "--toast-padding": "15px",
-            "--toast-duration": "3000",
-            "--toast-min-width": "300px",
-            "--toast-max-width": "400px",
-            "--toast-shadow": "0 8px 16px rgba(0,0,0,0.2)",
-            "--toast-z-index": 9999,
-            "--toast-margin": "10px",
-            soundUrl: null,
-        },
-        types: {
-            origin: {
-                "--toast-type-bg": "#1a1a1a",
-                "--toast-type-color": "#ffffff",
-            },
-            success: {
-                "--toast-type-bg": "#4CAF50",
-                "--toast-type-color": "#ffffff",
-            },
-            error: {
-                "--toast-type-bg": "#f44336",
-                "--toast-type-color": "#ffffff",
-            },
-            warning: {
-                "--toast-type-bg": "#ff9800",
-                "--toast-type-color": "#000000",
-            },
-            info: {
-                "--toast-type-bg": "#2196F3",
-                "--toast-type-color": "#ffffff",
-            },
-        },
-    };
+    const toastConfig = {soundWhenEnabled: "true",};
+    const defaultStyles = {toast: {"--toast-bg": "#1a1a1a","--toast-color": "#ffffff","--toast-font-size": "16px","--toast-border-radius": "16px","--toast-padding": "15px","--toast-duration": "3000","--toast-min-width": "300px","--toast-max-width": "400px","--toast-shadow": "0 8px 16px rgba(0,0,0,0.2)","--toast-z-index": 9999,"--toast-margin": "10px",soundUrl: null,},types: {origin: {"--toast-type-bg": "#1a1a1a","--toast-type-color": "#ffffff",},success: {"--toast-type-bg": "#4CAF50","--toast-type-color": "#ffffff",},error: {"--toast-type-bg": "#f44336","--toast-type-color": "#ffffff",},warning: {"--toast-type-bg": "#ff9800","--toast-type-color": "#000000",},info: {"--toast-type-bg": "#2196F3","--toast-type-color": "#ffffff",},},};
     let styleConfig = JSON.parse(JSON.stringify(defaultStyles));
     const createToastContainer = (position) => {
         let container = document.getElementById("ToastContainer");
@@ -164,7 +123,7 @@
         async jQueryinstaller() {
             try {
                 const mod =
-                    await import("https://code.jquery.com/jquery-4.0.0.module.min.js");
+                await import("https://code.jquery.com/jquery-4.0.0.module.min.js");
                 const $ = mod.default;
                 window.$ = $;
                 this.isLoaded = true;
@@ -189,7 +148,7 @@
             const stackSize = parseInt(container.dataset.toasts || "0");
             container.dataset.toasts = stackSize + 1;
             const typeStyle =
-                styleConfig.types[options.type] || styleConfig.types.origin;
+            styleConfig.types[options.type] || styleConfig.types.origin;
             Object.entries(typeStyle).forEach(([prop, value]) => {
                 toast.style.setProperty(prop, value);
             });
@@ -219,8 +178,7 @@
             }
             const message = document.createElement("div");
             message.className = options.title
-                ? "toast-description"
-                : "toast-content";
+            ? "toast-description": "toast-content";
             message.textContent = options.text;
             content.appendChild(message);
             toast.appendChild(content);
@@ -233,8 +191,8 @@
                 audio.play().catch(() => {});
             }
             const duration =
-                parseInt(styleConfig.toast["--toast-duration"]) ||
-                defaultStyles.toast["--toast-duration"];
+            parseInt(styleConfig.toast["--toast-duration"]) ||
+            defaultStyles.toast["--toast-duration"];
             setTimeout(() => {
                 toast.style.animation = `toastSlideOut var(--toast-slide-duration) cubic-bezier(0.4, 0.0, 1, 1) forwards`;
                 const toasts = container.querySelectorAll(".toast");
@@ -246,7 +204,8 @@
                 setTimeout(() => {
                     toast.remove();
                     container.dataset.toasts = Math.max(0, stackSize - 1);
-                }, 300);
+                },
+                    300);
             }, duration);
         }
         ensureVariableExists(internalKey) {
@@ -258,18 +217,8 @@
             ) {
                 return;
             }
-            console.log(
-                `💡 未知のデータ「${internalKey}」を検知！自動復元を試みます。`,
-            );
-            this._createToast({
-                type: Cast.toString("origin"),
-                image: xmlEscape(icon),
-                title: xmlEscape(Cast.toString("変数を復元しました")),
-                text: xmlEscape(
-                    Cast.toString(`変数: ${internalKey}を復元しました`),
-                ),
-                position: Cast.toString("bottom-right"),
-            });
+            console.log(`💡 未知のデータ「${internalKey}」を検知！自動復元を試みます。`);
+            this._createToast({type: Cast.toString("origin"),image: xmlEscape(icon),title: xmlEscape(Cast.toString("変数を復元しました")),text: xmlEscape(Cast.toString(`変数: ${internalKey}を復元しました`),),position: Cast.toString("bottom-right"),});
             let displayName = internalKey;
             let isLocal = false;
             let targetId = "stage";
@@ -284,11 +233,7 @@
                 targetId = "stage";
             }
             this.boolVariables[internalKey] = false;
-            this.boolVariablesinfo[internalKey] = {
-                isLocal: isLocal,
-                targetId: targetId,
-                displayName: displayName,
-            };
+            this.boolVariablesinfo[internalKey] = {isLocal: isLocal,targetId: targetId,displayName: displayName,};
             this.refreshBlocks();
         }
         getInfo() {
@@ -299,11 +244,10 @@
                 color1: "#ff8c1a",
                 color2: "#ff8000",
                 color3: "#db6d00",
-                blocks: [
-                    {
-                        blockType: Scratch.BlockType.LABEL,
-                        text: "真偽値変数",
-                    },
+                blocks: [{
+                    blockType: Scratch.BlockType.LABEL,
+                    text: "真偽値変数",
+                },
                     {
                         func: "createUI",
                         blockType: Scratch.BlockType.BUTTON,
@@ -339,7 +283,7 @@
                         opcode: "ifBool",
                         blockType: Scratch.BlockType.EVENT,
                         text: "bool値[variable]が[bool]になった時",
-                        isEdgeActivated: false, // startHats連動のイベント型
+                        isEdgeActivated: false,
                         arguments: {
                             variable: {
                                 type: Scratch.ArgumentType.STRING,
@@ -371,7 +315,9 @@
                         blockType: Scratch.BlockType.BOOLEAN,
                         text: "![bool]",
                         arguments: {
-                            bool: { type: Scratch.ArgumentType.BOOLEAN },
+                            bool: {
+                                type: Scratch.ArgumentType.BOOLEAN
+                            },
                         },
                     },
                     {
@@ -379,8 +325,12 @@
                         blockType: Scratch.BlockType.BOOLEAN,
                         text: "[bool1] && [bool2]",
                         arguments: {
-                            bool1: { type: Scratch.ArgumentType.BOOLEAN },
-                            bool2: { type: Scratch.ArgumentType.BOOLEAN },
+                            bool1: {
+                                type: Scratch.ArgumentType.BOOLEAN
+                            },
+                            bool2: {
+                                type: Scratch.ArgumentType.BOOLEAN
+                            },
                         },
                     },
                     {
@@ -388,8 +338,12 @@
                         blockType: Scratch.BlockType.BOOLEAN,
                         text: "[bool1] || [bool2]",
                         arguments: {
-                            bool1: { type: Scratch.ArgumentType.BOOLEAN },
-                            bool2: { type: Scratch.ArgumentType.BOOLEAN },
+                            bool1: {
+                                type: Scratch.ArgumentType.BOOLEAN
+                            },
+                            bool2: {
+                                type: Scratch.ArgumentType.BOOLEAN
+                            },
                         },
                     },
                     {
@@ -397,8 +351,12 @@
                         blockType: Scratch.BlockType.BOOLEAN,
                         text: "[bool1] !== [bool2]",
                         arguments: {
-                            bool1: { type: Scratch.ArgumentType.BOOLEAN },
-                            bool2: { type: Scratch.ArgumentType.BOOLEAN },
+                            bool1: {
+                                type: Scratch.ArgumentType.BOOLEAN
+                            },
+                            bool2: {
+                                type: Scratch.ArgumentType.BOOLEAN
+                            },
                         },
                     },
                     {
@@ -412,7 +370,7 @@
                             },
                         },
                     },
-                    
+
                     {
                         opcode: "setFps",
                         text: "fpsを [fps] にする",
@@ -442,16 +400,21 @@
                     },
                     staticBoolMenu: {
                         acceptReporters: false,
-                        items: [
-                            { text: "true", value: "true" },
-                            { text: "false", value: "false" },
+                        items: [{
+                            text: "true",
+                            value: "true"
+                        },
+                            {
+                                text: "false",
+                                value: "false"
+                            },
                         ],
                     },
                 },
             };
         }
         createUI() {
-            if(!ispenguin){
+            if (!ispenguin) {
                 //this.createUI_turbowarp();
                 //return;
             }
@@ -460,21 +423,21 @@
                 myScratchBlocks.prompt(
                     "新しい変数名:",
                     "",
-                    (name, more_vars, { scope }) => {
+                    (name, more_vars, {
+                        scope
+                    }) => {
                         if (!name || name.trim() === "") {
                             return;
                         }
                         const trimmedName = name.trim();
                         const editingTarget =
-                            Scratch.vm.runtime.getEditingTarget();
+                        Scratch.vm.runtime.getEditingTarget();
                         const currentTargetId = editingTarget
-                            ? (editingTarget.id ?? "stage")
-                            : "stage";
+                        ? (editingTarget.id ?? "stage"): "stage";
                         const isLocal = scope === "local";
-                        const targetId = isLocal ? currentTargetId : "stage";
+                        const targetId = isLocal ? currentTargetId: "stage";
                         const internalKey = isLocal
-                            ? `${targetId}_${trimmedName}`
-                            : trimmedName;
+                        ? `${targetId}_${trimmedName}`: trimmedName;
                         for (const key of Object.keys(self.boolVariablesinfo)) {
                             const info = self.boolVariablesinfo[key];
                             if (info.displayName === trimmedName) {
@@ -493,11 +456,7 @@
                             }
                         }
                         self.boolVariables[internalKey] = false; // ← typo 修正
-                        self.boolVariablesinfo[internalKey] = {
-                            isLocal: isLocal,
-                            targetId: targetId,
-                            displayName: trimmedName,
-                        };
+                        self.boolVariablesinfo[internalKey] = {isLocal: isLocal,targetId: targetId,displayName: trimmedName,};
                         this.refreshBlocks();
                         return;
                     },
@@ -506,87 +465,75 @@
                 );
             } catch (err) {}
         }
-        createUI_turbowarp(){
+        createUI_turbowarp() {
             if (this.isUIOpen) return;
             this.isUIOpen = true;
-
             const editingTarget = Scratch.vm.runtime.getEditingTarget();
-            const isStage = editingTarget ? !!editingTarget.isStage : false;
-            const currentTargetId = editingTarget ? (editingTarget.id ?? 'stage') : 'stage';
-
+            const isStage = editingTarget ? !!editingTarget.isStage: false;
+            const currentTargetId = editingTarget ? (editingTarget.id ?? 'stage'): 'stage';
             const overlay = document.createElement('div');
             overlay.style.cssText = `position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background-color:var(--ui-modal-overlay,rgba(0,0,0,0.55));color:var(--ui-modal-foreground,#333333);display:flex;justify-content:center;align-items:center;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;`;
-
             const dialog = document.createElement('div');
             dialog.style.cssText = `background-color:var(--ui-modal-background,#ffffff);width:360px;outline:none;border:4px solid #ff8787;padding:0;border-radius:0.5rem;user-select:none;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow,0px 4px 15px rgba(0,0,0,0.3));`;
-            
             dialog.innerHTML = `
-                <div style="display:flex;flex-direction:row;flex-wrap:nowrap;justify-content:space-between;align-items:center;height:3.125rem;width:100%;background-color:#ff4c4c;color:#ffffff;font-size:1rem;font-weight:normal;">
-                    <div style="width:3.125rem;height:100%;"></div>
-                    <div style="flex-grow:1;text-align:center;letter-spacing:0.4px;cursor:default;font-weight:bold;">新しい変数</div>
-                    <div style="width:3.125rem;height:100%;display:flex;justify-content:center;align-items:center;z-index:1;">
-                        <button id="ceoCloseXBtn" style="background:none;border:none;color:inherit;font-size:1.25rem;cursor:pointer;padding:0;width:100%;height:100%;">✕</button>
-                    </div>
-                </div>
-                <div style="background:var(--ui-modal-background,#ffffff);padding:1.5rem 2.25rem;display:flex;flex-direction:column;">
-                    <div style="font-weight:500;margin:0 0 0.75rem;font-size:14px;color:var(--text-primary,#575e75);text-align:left;">新しい変数名:</div>
-                    <input type="text" id="varInput" style="margin-bottom:1.5rem;width:100%;border:1px solid var(--ui-black-transparent,rgba(0,0,0,0.15));border-radius:calc(0.5rem / 2);padding:0 1rem;height:3rem;color:var(--text-primary,#333333);background-color:var(--input-background,#ffffff);font-size:.875rem;outline:none;box-sizing:border-box;" autofocus />
-                    <div style="display:flex;font-weight:normal;justify-content:space-between;margin-bottom:1.5rem;font-size:.875rem;color:var(--text-primary,#575e75);">
-                        ${isStage ? `
-                            <span style="font-size: 13px; color: var(--text-primary-alpha, #747474); line-height: 1.4; text-align: left;">ステージで作った変数は基本的にすべてのスプライトで使用できます</span>
-                        ` : `
-                            <label style="display:flex;align-items:center;cursor:pointer;">
-                                <input type="radio" name="variableScopeOption" value="global" checked style="margin:3px 6px 3px 3px;width:16px;height:16px;" />
-                                <span>すべてのスプライト用</span>
-                            </label>
-                            <label style="display:flex;align-items:center;cursor:pointer;">
-                                <input type="radio" name="variableScopeOption" value="local" style="margin:3px 6px 3px 3px;width:16px;height:16px;" />
-                                <span>このスプライトのみ</span>
-                            </label>
-                        `}
-                    </div>
-                    <div style="font-weight:bolder;text-align:right;margin-top:1rem;">
-                        <button id="cancelBtn" style="padding:0.75rem 1rem;border-radius:0.25rem;background:var(--ui-white,#ffffff);color:var(--text-primary,#333333);border:1px solid var(--ui-black-transparent,rgba(0,0,0,0.15));font-weight:600;font-size:0.85rem;cursor:pointer;outline:none;">キャンセル</button>
-                        <button id="okBtn" style="padding:0.75rem 1rem;border-radius:0.25rem;background:#ff4c4c;border:1px solid #ff4c4c;color:#ffffff;font-weight:600;font-size:0.85rem;cursor:pointer;outline:none;margin-left:0.5rem;">OK</button>
-                    </div>
-                </div>
+            <div style="display:flex;flex-direction:row;flex-wrap:nowrap;justify-content:space-between;align-items:center;height:3.125rem;width:100%;background-color:#ff4c4c;color:#ffffff;font-size:1rem;font-weight:normal;">
+            <div style="width:3.125rem;height:100%;"></div>
+            <div style="flex-grow:1;text-align:center;letter-spacing:0.4px;cursor:default;font-weight:bold;">新しい変数</div>
+            <div style="width:3.125rem;height:100%;display:flex;justify-content:center;align-items:center;z-index:1;">
+            <button id="ceoCloseXBtn" style="background:none;border:none;color:inherit;font-size:1.25rem;cursor:pointer;padding:0;width:100%;height:100%;">✕</button>
+            </div>
+            </div>
+            <div style="background:var(--ui-modal-background,#ffffff);padding:1.5rem 2.25rem;display:flex;flex-direction:column;">
+            <div style="font-weight:500;margin:0 0 0.75rem;font-size:14px;color:var(--text-primary,#575e75);text-align:left;">新しい変数名:</div>
+            <input type="text" id="varInput" style="margin-bottom:1.5rem;width:100%;border:1px solid var(--ui-black-transparent,rgba(0,0,0,0.15));border-radius:calc(0.5rem / 2);padding:0 1rem;height:3rem;color:var(--text-primary,#333333);background-color:var(--input-background,#ffffff);font-size:.875rem;outline:none;box-sizing:border-box;" autofocus />
+            <div style="display:flex;font-weight:normal;justify-content:space-between;margin-bottom:1.5rem;font-size:.875rem;color:var(--text-primary,#575e75);">
+            ${isStage ? `
+            <span style="font-size: 13px; color: var(--text-primary-alpha, #747474); line-height: 1.4; text-align: left;">ステージで作った変数は基本的にすべてのスプライトで使用できます</span>
+            `: `
+            <label style="display:flex;align-items:center;cursor:pointer;">
+            <input type="radio" name="variableScopeOption" value="global" checked style="margin:3px 6px 3px 3px;width:16px;height:16px;" />
+            <span>すべてのスプライト用</span>
+            </label>
+            <label style="display:flex;align-items:center;cursor:pointer;">
+            <input type="radio" name="variableScopeOption" value="local" style="margin:3px 6px 3px 3px;width:16px;height:16px;" />
+            <span>このスプライトのみ</span>
+            </label>
+            `}
+            </div>
+            <div style="font-weight:bolder;text-align:right;margin-top:1rem;">
+            <button id="cancelBtn" style="padding:0.75rem 1rem;border-radius:0.25rem;background:var(--ui-white,#ffffff);color:var(--text-primary,#333333);border:1px solid var(--ui-black-transparent,rgba(0,0,0,0.15));font-weight:600;font-size:0.85rem;cursor:pointer;outline:none;">キャンセル</button>
+            <button id="okBtn" style="padding:0.75rem 1rem;border-radius:0.25rem;background:#ff4c4c;border:1px solid #ff4c4c;color:#ffffff;font-weight:600;font-size:0.85rem;cursor:pointer;outline:none;margin-left:0.5rem;">OK</button>
+            </div>
+            </div>
             `;
-
             overlay.appendChild(dialog);
             document.body.appendChild(overlay);
-
             setTimeout(() => {
                 const inputField = document.getElementById('varInput');
                 if (inputField) inputField.focus();
-            }, 50);
-
+            },50);
             const close = () => {
-                overlay.remove(); 
+                overlay.remove();
                 this.isUIOpen = false;
             };
-
             overlay.onclick = (e) => {
                 if (e.target === overlay) close();
             };
-
             document.getElementById('ceoCloseXBtn').onclick = close;
             document.getElementById('cancelBtn').onclick = close;
-
             document.getElementById('okBtn').onclick = () => {
                 const name = document.getElementById('varInput').value;
                 if (name && name.trim() !== "") {
                     const trimmedName = name.trim();
-                    const scopeValue = (document.querySelector('input[name="variableScopeOption"]:checked') ?? { value: 'global' }).value;
-                    
-                    const isLocal = isStage ? false : (scopeValue === 'local');
-                    const targetId = isLocal ? currentTargetId : 'stage';
-                    
+                    const scopeValue = (document.querySelector('input[name="variableScopeOption"]:checked') ?? {
+                        value: 'global'
+                    }).value;
+                    const isLocal = isStage ? false: (scopeValue === 'local');
+                    const targetId = isLocal ? currentTargetId: 'stage';
                     let isDuplicate = false;
-
                     for (const existingKey of Object.keys(this.boolVariables)) {
                         const info = this.boolVariablesinfo[existingKey];
-                        const existingDisplayName = info ? (info.displayName ?? existingKey) : existingKey;
-
+                        const existingDisplayName = info ? (info.displayName ?? existingKey): existingKey;
                         if (existingDisplayName === trimmedName) {
                             if (!isLocal) {
                                 isDuplicate = true;
@@ -599,21 +546,13 @@
                             }
                         }
                     }
-
                     if (isDuplicate) {
                         alert(`❌ エラー: 「${trimmedName}」という名前の変数はすでに存在するか、競合するため作成できません！`);
                         return;
                     }
-
-                    const internalKey = isLocal ? `${targetId}_${trimmedName}` : trimmedName;
-                    
+                    const internalKey = isLocal ? `${targetId}_${trimmedName}`: trimmedName;
                     this.boolVariables[internalKey] = false;
-                    this.boolVariablesinfo[internalKey] = {
-                        isLocal: isLocal,
-                        targetId: targetId,
-                        displayName: trimmedName
-                    };
-                    
+                    this.boolVariablesinfo[internalKey] = {isLocal: isLocal,targetId: targetId,displayName: trimmedName};
                     setTimeout(() => {
                         this.refreshBlocks();
                     }, 50);
@@ -631,8 +570,7 @@
             const menuItems = [];
             const currentTarget = Scratch.vm.runtime.getEditingTarget();
             const currentTargetId = currentTarget
-                ? (currentTarget.id ?? "stage")
-                : "stage";
+            ? (currentTarget.id ?? "stage"): "stage";
             const variableKeys = Object.keys(this.boolVariables).filter(
                 (key) => {
                     const info = this.boolVariablesinfo[key];
@@ -643,15 +581,19 @@
             if (variableKeys.length > 0) {
                 for (const key of variableKeys) {
                     const info = this.boolVariablesinfo[key];
-                    const dispName = info ? (info.displayName ?? key) : key;
-                    menuItems.push({ text: dispName, value: key });
+                    const dispName = info ? (info.displayName ?? key): key;
+                    menuItems.push({
+                        text: dispName, value: key
+                    });
                 }
                 menuItems.push({
                     text: "変数を削除するフォームを開く",
                     value: "OPEN_DELETE_UI",
                 });
             } else {
-                menuItems.push({ text: "(空)", value: "(空)" });
+                menuItems.push({
+                    text: "(空)", value: "(空)"
+                });
             }
             menuItems.push({
                 text: "テストフォームを開く",
@@ -660,15 +602,14 @@
             return menuItems;
         }
         async createDeleteUI() {
-            if(!ispenguin){
+            if (!ispenguin) {
                 console.log(ScratchBlocks);
                 this.createDeleteUI_turbowarp();
                 return;
             }
             const currentTarget = Scratch.vm.runtime.getEditingTarget();
             const currentTargetId = currentTarget
-                ? (currentTarget.id ?? "stage")
-                : "stage";
+            ? (currentTarget.id ?? "stage"): "stage";
             const deleteableKeys = Object.keys(this.boolVariables).filter(
                 (internalKey) => {
                     const info = this.boolVariablesinfo[internalKey];
@@ -688,10 +629,8 @@
                 const info = this.boolVariablesinfo[key];
                 const dispName = info?.displayName || key;
                 const typeText = info
-                    ? info.isLocal
-                        ? "[ローカル]"
-                        : "[グローバル]"
-                    : "[不明]";
+                ? info.isLocal
+                ? "[ローカル]": "[グローバル]": "[不明]";
 
                 const option = document.createElement("option");
                 option.value = key;
@@ -707,29 +646,30 @@
                     },
                 },
                 {
-                    content: { width: "300px" },
-                },
-                [
-                    {
-                        name: "削除",
-                        role: "ok",
-                        callback: () => {
-                            const selectedKey = select.value;
-                            if (!selectedKey) return;
-
-                            const dispname =
-                                select.options[select.selectedIndex].text;
-
-                            if (confirm(`本当に bool値「${dispname}」を完全に削除しますか？`)) {
-                                delete this.boolVariables[selectedKey];
-                                delete this.boolVariablesinfo[selectedKey];
-                                alert(`🎉 bool値「${dispname}」を完全に削除しました！`,);
-                                this.refreshBlocks();
-                            }
-                            this.isDelUIOpen = false;
-                            this.refreshBlocks();
-                        },
+                    content: {
+                        width: "300px"
                     },
+                },
+                [{
+                    name: "削除",
+                    role: "ok",
+                    callback: () => {
+                        const selectedKey = select.value;
+                        if (!selectedKey) return;
+
+                        const dispname =
+                        select.options[select.selectedIndex].text;
+
+                        if (confirm(`本当に bool値「${dispname}」を完全に削除しますか？`)) {
+                            delete this.boolVariables[selectedKey];
+                            delete this.boolVariablesinfo[selectedKey];
+                            alert(`🎉 bool値「${dispname}」を完全に削除しました！`,);
+                            this.refreshBlocks();
+                        }
+                        this.isDelUIOpen = false;
+                        this.refreshBlocks();
+                    },
+                },
                     {
                         name: "キャンセル",
                         role: "close",
@@ -741,78 +681,67 @@
             );
             modal.appendChild(select);
         }
-        createDeleteUI_turbowarp(){
+        createDeleteUI_turbowarp() {
             if (this.isDelUIOpen) return;
             this.isDelUIOpen = true;
-
             setTimeout(() => {
                 const currentTarget = Scratch.vm.runtime.getEditingTarget();
-                const currentTargetId = currentTarget ? (currentTarget.id ?? 'stage') : 'stage';
-
+                const currentTargetId = currentTarget ? (currentTarget.id ?? 'stage'): 'stage';
                 const deleteableKeys = Object.keys(this.boolVariables).filter(internalKey => {
                     const info = this.boolVariablesinfo[internalKey];
                     if (!info) return true;
                     return !info.isLocal || info.targetId === currentTargetId;
                 });
-
                 if (deleteableKeys.length === 0) {
                     alert("❌ 削除できる変数がありません！");
-                    this.isDelUIOpen = false; 
+                    this.isDelUIOpen = false;
                     return;
                 }
-
                 const overlay = document.createElement('div');
                 overlay.style.cssText = `position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background-color:rgba(0,0,0,0.6);display:flex;justify-content:center;align-items:center;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;`;
-
                 const dialog = document.createElement('div');
                 dialog.style.cssText = `background-color:#ffffff;width:340px;border:4px solid #ff4c4c;border-radius:0.5rem;overflow:hidden;display:flex;flex-direction:column;box-shadow:0px 4px 15px rgba(0,0,0,0.3);`;
-
                 let optionsHtml = '';
                 for (const key of deleteableKeys) {
                     const info = this.boolVariablesinfo[key];
-                    const disp = info ? (info.displayName ?? key) : key;
-                    const typeText = info ? (info.isLocal ? '[ローカル]' : '[グローバル]') : '[不明]';
+                    const disp = info ? (info.displayName ?? key): key;
+                    const typeText = info ? (info.isLocal ? '[ローカル]': '[グローバル]'): '[不明]';
                     optionsHtml += `<option value="${key}">${typeText} ${disp}</option>`;
                 }
-
                 dialog.innerHTML = `
-                    <div style="height:3rem;background-color:#ff4c4c;color:#ffffff;display:flex;justify-content:center;align-items:center;font-weight:bold;font-size:1rem;">
-                        変数の削除
-                    </div>
-                    <div style="padding:1.5rem;display:flex;flex-direction:column;">
-                        <div style="font-size:14px;color:#575e75;margin-bottom:0.75rem;text-align:left;">削除する変数を選択してください:</div>
-                        <select id="deleteSelect" style="width:100%;height:2.5rem;border:1px solid #ccc;border-radius:4px;padding:0 0.5rem;font-size:14px;margin-bottom:1.5rem;background:#fff;outline:none;color:#000;">
-                            ${optionsHtml}
-                        </select>
-                        <div style="text-align:right;">
-                            <button id="cancelDelBtn" style="padding:0.5rem 1rem;border-radius:4px;background:#fff;color:#333;border:1px solid #ccc;font-weight:600;cursor:pointer;outline:none;">キャンセル</button>
-                            <button id="executeDelBtn" style="padding:0.5rem 1rem;border-radius:4px;background:#ff4c4c;color:#fff;border:none;font-weight:600;cursor:pointer;outline:none;margin-left:0.5rem;">削除実行</button>
-                        </div>
-                    </div>
+                <div style="height:3rem;background-color:#ff4c4c;color:#ffffff;display:flex;justify-content:center;align-items:center;font-weight:bold;font-size:1rem;">
+                変数の削除
+                </div>
+                <div style="padding:1.5rem;display:flex;flex-direction:column;">
+                <div style="font-size:14px;color:#575e75;margin-bottom:0.75rem;text-align:left;">削除する変数を選択してください:</div>
+                <select id="deleteSelect" style="width:100%;height:2.5rem;border:1px solid #ccc;border-radius:4px;padding:0 0.5rem;font-size:14px;margin-bottom:1.5rem;background:#fff;outline:none;color:#000;">
+                ${optionsHtml}
+                </select>
+                <div style="text-align:right;">
+                <button id="cancelDelBtn" style="padding:0.5rem 1rem;border-radius:4px;background:#fff;color:#333;border:1px solid #ccc;font-weight:600;cursor:pointer;outline:none;">キャンセル</button>
+                <button id="executeDelBtn" style="padding:0.5rem 1rem;border-radius:4px;background:#ff4c4c;color:#fff;border:none;font-weight:600;cursor:pointer;outline:none;margin-left:0.5rem;">削除実行</button>
+                </div>
+                </div>
                 `;
-
                 overlay.appendChild(dialog);
                 document.body.appendChild(overlay);
-
                 const closeDel = () => {
                     overlay.remove();
-                    this.isDelUIOpen = false; 
+                    this.isDelUIOpen = false;
                 };
-
                 document.getElementById('cancelDelBtn').onclick = closeDel;
-                overlay.onclick = (e) => { if (e.target === overlay) closeDel(); };
-
+                overlay.onclick = (e) => {
+                    if (e.target === overlay) closeDel();
+                };
                 document.getElementById('executeDelBtn').onclick = () => {
                     const targetKey = document.getElementById('deleteSelect').value;
                     const info = this.boolVariablesinfo[targetKey];
-                    const dispName = info ? (info.displayName ?? targetKey) : targetKey;
+                    const dispName = info ? (info.displayName ?? targetKey): targetKey;
 
                     if (confirm(`本当に bool値「${dispName}」を完全に削除しますか？\n(この変数を使用している他のブロックは初期状態に戻ります)`)) {
                         delete this.boolVariables[targetKey];
                         delete this.boolVariablesinfo[targetKey];
-
                         closeDel();
-                        
                         setTimeout(() => {
                             alert(`🎉 bool値「${dispName}」を完全に削除しました！`);
                             this.refreshBlocks();
@@ -821,7 +750,7 @@
                     }
                     closeDel();
                 };
-            }, 100); 
+            },100);
         }
         test() {
             /*
@@ -880,19 +809,19 @@
                 title: "新しい変数",
                 text: "新しい変数名:",
                 extraHtml: `
-                    <input type="text" id="modal-input" placeholder="" style="width:100%;padding:10px;margin-bottom:15px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
-                    <label style="display:block;margin-bottom:10px;"><input type="radio" name="opt" value="global" checked>すべてのスプライト用</label>
-                    <label style="display:block;margin-bottom:10px;"><input type="radio" name="opt" value="local">このスプライト用</label>
+                <input type="text" id="modal-input" placeholder="" style="width:100%;padding:10px;margin-bottom:15px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
+                <label style="display:block;margin-bottom:10px;"><input type="radio" name="opt" value="global" checked>すべてのスプライト用</label>
+                <label style="display:block;margin-bottom:10px;"><input type="radio" name="opt" value="local">このスプライト用</label>
                 `,
                 customCss: `
-                    .custom-modal input[type="text"]:focus {
-                        border-color: #3b82f6;
-                        outline: none;
-                    }
+                .custom-modal input[type="text"]:focus {
+                border-color: #3b82f6;
+                outline: none;
+                }
                 `
             });
         }
-        setBool(args, util) {
+        setBool(args,util) {
             if (args.variable === "OPEN_DELETE_UI") {
                 this.createDeleteUI();
                 return;
@@ -931,50 +860,33 @@
                 args.bool === util.currentBackgroundData.bool
             );
         }
-        getallBool(args) {
-            return JSON.stringify(this.boolVariables);
-        }
-        getallboolinfo(args) {
-            return JSON.stringify(this.boolVariablesinfo);
-        }
-        reversebool(args, util) {
-            return !args.bool;
-        }
-        andbool(args, util) {
-            return !!(args.bool1 && args.bool2);
-        }
-        orbool(args, util) {
-            return !!(args.bool1 || args.bool2);
-        }
-        xorbool(args, util) {
-            return args.bool1 !== args.bool2;
-        }
+        getallBool(args) {return JSON.stringify(this.boolVariables);}
+        getallboolinfo(args) {return JSON.stringify(this.boolVariablesinfo);}
+        reversebool(args, util) {return !args.bool;}
+        andbool(args, util) {return !!(args.bool1 && args.bool2);}
+        orbool(args, util) {return !!(args.bool1 || args.bool2);}
+        xorbool(args, util) {return args.bool1 !== args.bool2;}
         initLoop() {
-        const update = (now) => {
-            this.frameCount++;
-            if (this.previousTime === 0) {
-                this.deltaTime = 1 / 60;
-            } else {
-                this.deltaTime = (now - this.previousTime) / 1000;
-            }
-            this.previousTime = now;
+            const update = (now) => {
+                this.frameCount++;
+                if (this.previousTime === 0) {
+                    this.deltaTime = 1 / 60;
+                } else {
+                    this.deltaTime = (now - this.previousTime) / 1000;
+                }
+                this.previousTime = now;
+                requestAnimationFrame(update);
+            };
             requestAnimationFrame(update);
-        };
-        requestAnimationFrame(update);
-    }
-    async waitFrames(args, util) {
-        const targetFrame = this.frameCount + args.frames;
-        while (this.frameCount < targetFrame) {
-            await new Promise((resolve) => setTimeout(resolve, 0));
         }
-    }
-        async setFps(args) {
-            Scratch.vm.runtime.frameLoop.setFramerate(args["fps"]);
+        async waitFrames(args, util) {
+            const targetFrame = this.frameCount + args.frames;
+            while (this.frameCount < targetFrame) {
+                await new Promise((resolve) => setTimeout(resolve, 0));
+            }
         }
-        async fps(args) {
-            return Scratch.vm.runtime.frameLoop.framerate;
-        }
+        async setFps(args) {Scratch.vm.runtime.frameLoop.setFramerate(args["fps"]);}
+        async fps(args) {return Scratch.vm.runtime.frameLoop.framerate;}
     }
-    const Boolvariableextension = new Boolvariable();
-    Scratch.extensions.register(Boolvariableextension);
+    Scratch.extensions.register(new Boolvariable);
 })(Scratch);
