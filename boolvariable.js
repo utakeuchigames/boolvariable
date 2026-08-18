@@ -158,6 +158,7 @@
             this.customId = Boolvariable.customId;
             this.type = Boolvariable.customId;
             injectStyles();
+            this.initLoop();
             this.jQueryinstaller();
         }
         async jQueryinstaller() {
@@ -948,12 +949,25 @@
         xorbool(args, util) {
             return args.bool1 !== args.bool2;
         }
-        async waitFrames(args, util) {
-            const targetFrame = this.frameCount + args.frames - 1;
-            while (this.frameCount < targetFrame) {
-                await new Promise((resolve) => requestAnimationFrame(resolve));
+        initLoop() {
+        const update = (now) => {
+            this.frameCount++;
+            if (this.previousTime === 0) {
+                this.deltaTime = 1 / 60;
+            } else {
+                this.deltaTime = (now - this.previousTime) / 1000;
             }
+            this.previousTime = now;
+            requestAnimationFrame(update);
+        };
+        requestAnimationFrame(update);
+    }
+    async waitFrames(args, util) {
+        const targetFrame = this.frameCount + args.frames;
+        while (this.frameCount < targetFrame) {
+            await new Promise((resolve) => setTimeout(resolve, 0));
         }
+    }
         async setFps(args) {
             Scratch.vm.runtime.frameLoop.setFramerate(args["fps"]);
         }
@@ -962,15 +976,5 @@
         }
     }
     const Boolvariableextension = new Boolvariable();
-    vm.runtime.on("BEFORE_EXECUTE", () => {
-        Boolvariableextension.frameCount++;
-        const now = performance.now();
-        if (previousTime === 0) {
-            deltaTime = 1 / vm.runtime.frameLoop.framerate;
-        } else {
-            deltaTime = (now - previousTime) / 1000;
-        }
-        previousTime = now;
-    });
     Scratch.extensions.register(Boolvariableextension);
 })(Scratch);
