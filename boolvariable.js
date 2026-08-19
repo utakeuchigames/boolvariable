@@ -880,7 +880,7 @@
             requestAnimationFrame(update);
         }
         async waitFrames(args, util) {
-            const targetFrame = this.frameCount + args.frames;
+            const targetFrame = this.frameCount + args.frames - 1;
             while (this.frameCount < targetFrame) {
                 await new Promise((resolve) => requestAnimationFrame(resolve));
             }
