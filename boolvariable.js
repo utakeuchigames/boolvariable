@@ -1,6 +1,6 @@
 (async (Scratch) => {
     "use strict";
-    const varsion = '1.0.1';
+    const varsion = '1.0.2';
     const ispenguin = Scratch.extensions.isPenguinMod ?? false;
     const icon = "https://utakeuchigames.github.io/boolvariable/favicon.svg";
     const vm = Scratch.vm;
@@ -882,7 +882,7 @@
         async waitFrames(args, util) {
             const targetFrame = this.frameCount + args.frames;
             while (this.frameCount < targetFrame) {
-                await new Promise((resolve) => setTimeout(resolve, 0));
+                await new Promise((resolve) => requestAnimationFrame(resolve));
             }
         }
         async setFps(args) {Scratch.vm.runtime.frameLoop.setFramerate(args["fps"]);}
