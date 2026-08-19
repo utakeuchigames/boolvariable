@@ -117,14 +117,16 @@
                         },
                     },
                     {
-                        opcode: "getallBool",
-                        blockType: Scratch.BlockType.REPORTER,
-                        text: "全部のbool値を見る",
-                    },
-                    {
-                        opcode: "getallboolinfo",
-                        blockType: Scratch.BlockType.REPORTER,
-                        text: "全部のbool値の情報を見る",
+
+                        opcode: "deleteBool",
+                        blockType: Scratch.BlockType.COMMAND,
+                        text: "bool値[variable]を削除する",
+                        arguments: {
+                            variable: {
+                                type: Scratch.ArgumentType.STRING,
+                                menu: "boolVariableMenu",
+                            },
+                        },
                     },
                     "---",
                     {
@@ -273,10 +275,6 @@
                         text: dispName, value: key
                     });
                 }
-                menuItems.push({
-                    text: `${this.boolVariablesinfo[currentlySelectedValue].displayName}を削除する`,
-                    value: `${currentlySelectedValue}_DELETE`,
-                });
             } else {
                 menuItems.push({
                     text: "(空)", value: "(空)"
@@ -285,13 +283,6 @@
             return menuItems;
         }
         setBool(args,util) {
-            if (args.variable.includes("DELETE")) {
-                let selectedKey = args.variable.split("_DELETE")[0];
-                delete this.boolVariables[selectedKey];
-                delete this.boolVariablesinfo[selectedKey];
-                this.refreshBlocks();
-                return;
-            }
             if (args.variable === "(空)") return;
             this.ensureVariableExists(args.variable);
             const prevalue = this.boolVariables[args.variable];
@@ -322,8 +313,14 @@
                 args.bool === util.currentBackgroundData.bool
             );
         }
-        getallBool(args) {return JSON.stringify(this.boolVariables);}
-        getallboolinfo(args) {return JSON.stringify(this.boolVariablesinfo);}
+        deleteBool(args, util) {
+            if (args.variable === "(空)") return;
+            let selectedKey = args.variable;
+            delete this.boolVariables[selectedKey];
+            delete this.boolVariablesinfo[selectedKey];
+            this.refreshBlocks();
+            return;
+        }
         reversebool(args, util) {return !args.bool;}
         andbool(args, util) {return !!(args.bool1 && args.bool2);}
         orbool(args, util) {return !!(args.bool1 || args.bool2);}
